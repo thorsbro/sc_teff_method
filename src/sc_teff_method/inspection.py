@@ -9,6 +9,7 @@ from __future__ import annotations
 import html
 import math
 from collections.abc import Iterable
+from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
@@ -47,12 +48,18 @@ except ImportError as exc:
     raise ImportError("Interactive inspection requires 'sc-teff-method[inspect]'") from exc
 
 from ._data import LINE_IDS
+from .api import estimate_temperature
+from .continuum import ContinuumCorrection, evaluate_continuum
 from .fitting import GaussianParameters, gaussian_absorption
 from .review import ReviewSession
 
 _COLORS = {"pending": "#a26a08", "accepted": "#17754d", "rejected": "#a63635"}
 _FIELD_NAMES = (
     "window_lower", "window_upper", "initial_amplitude", "initial_centre", "initial_sigma",
+)
+_CONTINUUM_FIELDS = (
+    "continuum_level", "continuum_anchor1_x", "continuum_anchor1_y",
+    "continuum_anchor2_x", "continuum_anchor2_y",
 )
 
 
@@ -79,6 +86,8 @@ class _RegionPlot:
         self.used = ColumnDataSource({"x": [], "y": []})
         self.removed = ColumnDataSource({"x": [], "y": []})
         self.model = ColumnDataSource({"x": [], "y": []})
+        self.continuum = ColumnDataSource({"x": [], "y": []})
+        self.anchors = ColumnDataSource({"x": [], "y": []})
         self.residual_used = ColumnDataSource({"x": [], "y": []})
         self.residual_removed = ColumnDataSource({"x": [], "y": []})
         self.shading = ColumnDataSource({"left": [], "right": [], "top": [], "bottom": []})
@@ -97,10 +106,15 @@ class _RegionPlot:
         self.profile.quad(left="left", right="right", top="top", bottom="bottom",
                           source=self.shading, fill_color="#d4514b", fill_alpha=0.08,
                           line_alpha=0)
+        self.profile.line("x", "y", source=self.native, color="#a9afb6", line_alpha=0.7)
         self.profile.scatter("x", "y", source=self.native, color="#a9afb6", size=3)
         used = self.profile.scatter("x", "y", source=self.used, color="#247397", size=3)
         self.profile.scatter("x", "y", source=self.removed, color="#bf3f39", marker="x", size=6)
         self.profile.line("x", "y", source=self.model, color="#d8871d", line_width=2)
+        self.profile.line("x", "y", source=self.continuum, color="#33845a",
+                          line_width=2, line_dash="dashed")
+        self.profile.scatter("x", "y", source=self.anchors, color="#33845a",
+                             marker="diamond", size=10 if detail else 6)
         if self.mask_tool is not None:
             self.mask_tool.renderers = [used]
         self.residual = figure(
@@ -146,24 +160,38 @@ class _RegionPlot:
         self.residual.xaxis.axis_label = "Rest air wavelength (Å)" if detail else None
         self.layout = column(self.profile, self.residual, spacing=1, margin=0)
 
-    def update(self, spectrum, fit) -> None:
-        x, y = spectrum.wavelength_air_angstrom, spectrum.flux
+    def update(self, spectrum, fit, corrected=None, correction=None) -> None:
+        x = spectrum.wavelength_air_angstrom
+        y = spectrum.flux if corrected is None else corrected.flux
+        original_y = spectrum.flux
         lower, upper = fit.window
         padding = 0.12 * (upper - lower)
         region = (x >= lower-padding) & (x <= upper+padding)
-        finite = region & np.isfinite(y)
+        finite = region & np.isfinite(original_y)
         masked = np.array(spectrum.mask, copy=True)
         for lo, hi in fit.excluded_regions:
             masked |= (x >= lo) & (x <= hi)
         used = region & (x >= lower) & (x <= upper) & ~masked & np.isfinite(y)
-        removed = region & masked
+        removed = region & (x >= lower) & (x <= upper) & masked
         if fit.status == "excluded":
             removed |= region & (x >= lower) & (x <= upper)
             used[:] = False
-        self.native.data = {"x": x[finite], "y": y[finite]}
+        self.native.data = {"x": x[finite], "y": original_y[finite]}
         self.used.data = {"x": x[used], "y": y[used]}
         self.removed.data = {"x": x[removed], "y": np.where(np.isfinite(y[removed]), y[removed], 1)}
-        values = y[finite]
+        values = np.concatenate((y[region & np.isfinite(y)], original_y[finite]))
+        if correction is not None and correction.enabled and correction.mode != "none":
+            continuum_x = np.linspace(lower, upper, 150)
+            continuum_y = evaluate_continuum(continuum_x, correction)
+            self.continuum.data = {"x": continuum_x, "y": continuum_y}
+            self.anchors.data = {
+                "x": [point[0] for point in correction.anchors],
+                "y": [point[1] for point in correction.anchors],
+            } if correction.mode == "linear" else {"x": [], "y": []}
+            values = np.concatenate((values, continuum_y[np.isfinite(continuum_y)]))
+        else:
+            self.continuum.data = {"x": [], "y": []}
+            self.anchors.data = {"x": [], "y": []}
         ymin = min(float(values.min()), 1.0)-0.05 if values.size else 0.0
         ymax = max(float(values.max()), 1.0)+0.05 if values.size else 1.1
         self.shading.data = {
@@ -213,6 +241,7 @@ class ReviewDocument:
         self._drafts = {}
         self._mask_drafts = {}
         self._mask_selection = {}
+        self._continuum_drafts = {}
         self._note_errors = {}
         self._invalid_lines = set()
         self._selected = LINE_IDS[0]
@@ -231,13 +260,16 @@ class ReviewDocument:
         caution = Div(text=(
             "<b>Scientific review is required.</b> Convergence is not acceptance. "
             "Only explicitly accepted valid fits enter the reviewed temperature. "
-            "Frozen subset RMSE does not validate post-hoc line selection."
+            "Frozen subset RMSE does not validate post-hoc line selection "
+            "or newly chosen continuum corrections."
         ), width=1400, styles={"color": "#725619", "font-size": "12px"})
         legend = Div(text=(
-            "<span style='color:#247397'>● Native pixels</span> · "
+            "<span style='color:#a9afb6'>— Original input</span> · "
+            "<span style='color:#247397'>● Corrected fitting pixels</span> · "
+            "<span style='color:#33845a'>-- User continuum / ◆ anchors</span> · "
             "<span style='color:#d8871d'>— Gaussian / fitted centre</span> · "
             "grey dashed: laboratory centre · purple dotted: window · "
-            "<span style='color:#bf3f39'>× excluded pixels</span> · continuum fixed at 1"
+            "<span style='color:#bf3f39'>× excluded pixels</span> · Gaussian continuum fixed at 1"
         ), width=1400, styles={"font-size": "11px"})
         self.message = widget(Div(text="", width=1400), "review_message")
         self.scientific_warnings = widget(Div(width=1400), "scientific_warnings")
@@ -267,8 +299,9 @@ class ReviewDocument:
                                  width=440), "line_selector")
         self.detail_plot = _RegionPlot(450, detail=True, name="selected")
         detail_hint = Div(text=(
-            "Drag horizontally in the upper plot to add an excluded interval. "
-            "Use the pan/zoom tools to navigate. Changes refit this line only."
+            "Drag horizontally to exclude pixels. Select a continuum mouse action below "
+            "and tap the plot to set an anchor or constant level. All coordinates are rest air Å. "
+            "Changes refit this line only from the original spectrum."
         ), width=440, styles={"font-size": "11px", "color": "#526171"})
         self.details = widget(Div(width=440, styles={"font-size": "12px"}), "fit_details")
         lower = widget(TextInput(title="Window lower (Å)", width=215), "window_lower")
@@ -287,6 +320,37 @@ class ReviewDocument:
         add = widget(Button(label="Add interval", width=140), "mask_add")
         update = widget(Button(label="Update interval", width=140), "mask_update")
         remove = widget(Button(label="Remove interval", width=140), "mask_remove")
+        continuum_title = Div(text="<b>Manual local continuum</b> · flux / C(λ)", width=440)
+        continuum_enabled = widget(CheckboxGroup(labels=["Enable user continuum correction"],
+                                                  active=[], width=440), "continuum_enabled")
+        continuum_mode = widget(Select(title="Correction mode", options=["constant", "linear"],
+                                       value="constant", width=215), "continuum_mode")
+        continuum_level = widget(TextInput(title="Constant continuum level C", value="1.0",
+                                           width=215), "continuum_level")
+        anchor1_x = widget(TextInput(title="Anchor 1 wavelength (Å)", width=215),
+                           "continuum_anchor1_x")
+        anchor1_y = widget(TextInput(title="Anchor 1 continuum C", width=215),
+                           "continuum_anchor1_y")
+        anchor2_x = widget(TextInput(title="Anchor 2 wavelength (Å)", width=215),
+                           "continuum_anchor2_x")
+        anchor2_y = widget(TextInput(title="Anchor 2 continuum C", width=215),
+                           "continuum_anchor2_y")
+        continuum_mouse = widget(Select(title="Mouse action in detailed profile",
+                                        options=[("mask", "Drag: exclude pixels"),
+                                                 ("constant", "Tap: set constant level"),
+                                                 ("anchor1", "Tap: add / move anchor 1"),
+                                                 ("anchor2", "Tap: add / move anchor 2")],
+                                        value="mask", width=440), "continuum_mouse")
+        remove_anchor1 = widget(Button(label="Remove anchor 1", width=140),
+                                "continuum_remove_anchor1")
+        remove_anchor2 = widget(Button(label="Remove anchor 2", width=140),
+                                "continuum_remove_anchor2")
+        reset_continuum = widget(Button(label="Reset to unity", width=140), "reset_continuum")
+        continuum_hint = Div(text=(
+            "Anchors and levels are entirely user chosen; no continuum optimisation occurs. "
+            "Formal Gaussian errors exclude continuum-placement uncertainty. "
+            "A better-looking fit does not validate the correction."
+        ), width=440, styles={"font-size": "11px", "color": "#725619"})
         note = widget(TextInput(title="Review reason / note (optional)", width=440,
                                 max_length=4000), "review_note")
         accept = widget(Button(label="Accept fit", button_type="success", width=150), "accept_line")
@@ -296,7 +360,13 @@ class ReviewDocument:
                         row(lower, upper, spacing=10), automatic,
                         row(amp, centre, sigma, spacing=5), row(refit, reset, spacing=10),
                         masks, row(mask_lower, mask_upper, spacing=10),
-                        row(add, update, remove, spacing=5), note,
+                        row(add, update, remove, spacing=5),
+                        continuum_title, continuum_enabled,
+                        row(continuum_mode, continuum_level, spacing=10),
+                        row(anchor1_x, anchor1_y, spacing=10),
+                        row(anchor2_x, anchor2_y, spacing=10), continuum_mouse,
+                        row(remove_anchor1, remove_anchor2, reset_continuum, spacing=5),
+                        continuum_hint, note,
                         row(accept, reject, pending, spacing=5), width=450, spacing=5)
 
         review = widget(TextInput(title="Review JSON path", value=str(review_path), width=400),
@@ -337,6 +407,15 @@ class ReviewDocument:
             self.widgets[name].on_change("value", self._controls_changed)
             self.widgets[name].on_change("value_input", self._draft_callback(name))
         automatic.on_change("active", self._controls_changed)
+        continuum_enabled.on_change("active", self._continuum_changed)
+        continuum_mode.on_change("value", self._continuum_changed)
+        for name in _CONTINUUM_FIELDS:
+            self.widgets[name].on_change("value", self._continuum_changed)
+            self.widgets[name].on_change("value_input", self._continuum_draft_callback(name))
+        continuum_mouse.on_change("value", self._continuum_mouse_changed)
+        remove_anchor1.on_click(lambda: self.remove_continuum_anchor(1))
+        remove_anchor2.on_click(lambda: self.remove_continuum_anchor(2))
+        reset_continuum.on_click(self.reset_continuum_selected)
         masks.on_change("value", self._mask_selected)
         mask_lower.on_change("value", self._mask_field_changed)
         mask_upper.on_change("value", self._mask_field_changed)
@@ -356,6 +435,7 @@ class ReviewDocument:
         load.on_click(self.load_review)
         export.on_click(self.export_results)
         self.detail_plot.profile.on_event(SelectionGeometry, self._mask_geometry)
+        self.detail_plot.profile.on_event(Tap, self._continuum_tap)
         self.refresh()
         # Bokeh registers model-event routes when models attach to a document.
         # All button/geometry callbacks must exist before this attachment.
@@ -421,7 +501,7 @@ class ReviewDocument:
             )
         return window, initial
 
-    def apply_controls(self, *, regions=None) -> None:
+    def apply_controls(self, *, regions=None, continuum=None) -> None:
         self._clear_approval()
         try:
             window, initial = self._line_arguments()
@@ -437,6 +517,7 @@ class ReviewDocument:
             self.session.edit_line(
                 self.selected_line, window=window, initial=initial,
                 excluded_regions=regions,
+                continuum=self._continuum_arguments() if continuum is None else continuum,
             )
         except (ValueError, TypeError) as exc:
             self._drafts[self.selected_line] = {
@@ -448,6 +529,7 @@ class ReviewDocument:
             return
         self._drafts.pop(self.selected_line, None)
         self._mask_drafts.pop(self.selected_line, None)
+        self._continuum_drafts.pop(self.selected_line, None)
         self._invalid_lines.discard(self.selected_line)
         self._success("Line refitted; scientific review is pending.")
         self.refresh()
@@ -457,10 +539,108 @@ class ReviewDocument:
         self._drafts.pop(self.selected_line, None)
         self._mask_drafts.pop(self.selected_line, None)
         self._mask_selection.pop(self.selected_line, None)
+        self._continuum_drafts.pop(self.selected_line, None)
         self._note_errors.pop(self.selected_line, None)
         self._invalid_lines.discard(self.selected_line)
-        self._success("Line reset to default window, automatic start and no added mask intervals.")
+        self._success("Line reset to default window, automatic start, unity continuum "
+                      "and no added mask intervals.")
         self.refresh()
+
+    def _continuum_values(self) -> dict:
+        return {
+            "enabled": bool(self.widgets["continuum_enabled"].active),
+            "mode": self.widgets["continuum_mode"].value,
+            **{name: self.widgets[name].value for name in _CONTINUUM_FIELDS},
+        }
+
+    def _continuum_arguments(self) -> ContinuumCorrection:
+        values = self._continuum_values()
+        if values["mode"] == "constant":
+            return ContinuumCorrection(enabled=values["enabled"], mode="constant",
+                                       level=float(values["continuum_level"]))
+        return ContinuumCorrection(
+            enabled=values["enabled"], mode="linear",
+            anchors=((float(values["continuum_anchor1_x"]),
+                      float(values["continuum_anchor1_y"])),
+                     (float(values["continuum_anchor2_x"]),
+                      float(values["continuum_anchor2_y"]))),
+        )
+
+    def _continuum_draft_callback(self, field):
+        def callback(attr, old, new):
+            if self._loading or new == self.widgets[field].value:
+                return
+            values = self._continuum_values()
+            values[field] = new
+            self._continuum_drafts[self.selected_line] = values
+            self._clear_approval()
+        return callback
+
+    def _continuum_changed(self, attr, old, new) -> None:
+        if self._loading:
+            return
+        self._continuum_drafts[self.selected_line] = self._continuum_values()
+        if attr == "active" and not new:
+            try:
+                correction = self._continuum_arguments()
+            except (TypeError, ValueError):
+                # Disabling is always possible, even with incomplete anchor drafts.
+                correction = replace(self.session.controls[self.selected_line].continuum,
+                                     enabled=False)
+            self.apply_controls(continuum=correction)
+        else:
+            self.apply_controls()
+
+    def _continuum_mouse_changed(self, attr, old, new) -> None:
+        self.detail_plot.profile.toolbar.active_drag = (
+            self.detail_plot.mask_tool if new == "mask" else None
+        )
+
+    def _continuum_tap(self, event) -> None:
+        action = self.widgets["continuum_mouse"].value
+        if action == "mask":
+            return
+        if (not math.isfinite(event.x) or not math.isfinite(event.y)
+                or event.x <= 0 or event.y <= 0):
+            self._error("Continuum anchors need finite positive wavelengths and levels.")
+            return
+        # The clicked coordinates are user input, never inferred from flux pixels.
+        self._loading = True
+        self.widgets["continuum_enabled"].active = [0]
+        if action == "constant":
+            self.widgets["continuum_mode"].value = "constant"
+            self.widgets["continuum_level"].value = repr(float(event.y))
+        else:
+            self.widgets["continuum_mode"].value = "linear"
+            anchor = "1" if action == "anchor1" else "2"
+            self.widgets[f"continuum_anchor{anchor}_x"].value = repr(float(event.x))
+            self.widgets[f"continuum_anchor{anchor}_y"].value = repr(float(event.y))
+        self._loading = False
+        self._continuum_changed(None, None, None)
+
+    def remove_continuum_anchor(self, index: int) -> None:
+        self._loading = True
+        self.widgets["continuum_mode"].value = "linear"
+        self.widgets[f"continuum_anchor{index}_x"].value = ""
+        self.widgets[f"continuum_anchor{index}_y"].value = ""
+        self._loading = False
+        self._continuum_changed(None, None, None)
+
+    def reset_continuum_selected(self) -> None:
+        # Apply unity through the same adapter, preserving ordinary fitting controls.
+        self._loading = True
+        self.widgets["continuum_enabled"].active = []
+        self.widgets["continuum_mode"].value = "constant"
+        self.widgets["continuum_level"].value = "1.0"
+        lower, upper = self.session.fits[self.selected_line].window
+        for index, wavelength in ((1, lower), (2, upper)):
+            self.widgets[f"continuum_anchor{index}_x"].value = repr(wavelength)
+            self.widgets[f"continuum_anchor{index}_y"].value = "1.0"
+        self._loading = False
+        self._continuum_drafts.pop(self.selected_line, None)
+        self.apply_controls()
+        if self.selected_line not in self._invalid_lines:
+            self._success("Local continuum reset to unity; scientific review is pending.")
 
     def _mask_selected(self, attr, old, new) -> None:
         if self._loading:
@@ -565,7 +745,8 @@ class ReviewDocument:
         self.apply_controls(regions=regions)
 
     def _mask_geometry(self, event) -> None:
-        if not event.final or event.geometry.get("type") != "rect":
+        if (self.widgets["continuum_mouse"].value != "mask"
+                or not event.final or event.geometry.get("type") != "rect"):
             return
         lower, upper = sorted((float(event.geometry["x0"]), float(event.geometry["x1"])))
         if not math.isfinite(lower) or not math.isfinite(upper) or lower == upper:
@@ -666,7 +847,8 @@ class ReviewDocument:
             card.styles = {"border-bottom": "1px solid #d4dbe1", "padding-bottom": "5px",
                            "border-left": f"3px solid {_COLORS[decision.state]}"}
             if self._plot_fits.get(line) is not fit:
-                plots.update(self.session.spectrum, fit)
+                plots.update(self.session.spectrum, fit, self.session.corrected_spectrum(line),
+                             self.session.controls[line].continuum)
                 self._plot_fits[line] = fit
         line = self.selected_line
         fit, decision = self.session.fits[line], self.session.decisions[line]
@@ -676,7 +858,9 @@ class ReviewDocument:
         self.widgets["accept_line"].label = "Accept flagged fit" if fit.flags else "Accept fit"
         if (self._detail_fit is None or self._detail_fit[0] != line
                 or self._detail_fit[1] is not fit):
-            self.detail_plot.update(self.session.spectrum, fit)
+            self.detail_plot.update(self.session.spectrum, fit,
+                                    self.session.corrected_spectrum(line),
+                                    self.session.controls[line].continuum)
             self._detail_fit = (line, fit)
         parameters = fit.parameters
         status = f"<b>{line}: {_escape(decision.state.upper())}</b> · {_escape(fit.status)}"
@@ -704,6 +888,24 @@ class ReviewDocument:
                 )
             else:
                 status += "<br/>Formal parameter errors are unavailable."
+        correction = self.session.controls[line].continuum
+        before = self.session.uncorrected_fits[line]
+        before_temperature = None
+        if before.area_angstrom is not None and before.area_angstrom > 0:
+            before_temperature = estimate_temperature(
+                {line: before.area_angstrom}, configuration=self.session.configuration,
+                feh=self.session.feh,
+                reference_temperature_k=self.session.reference_temperature_k,
+            ).temperature_k
+        status += (
+            f"<br/><b>Before correction:</b> W {_number(before.area_angstrom, 8)} Å; "
+            f"line Teff {_number(before_temperature, 7)} K. "
+            f"<b>Current:</b> W {_number(fit.area_angstrom, 8)} Å; "
+            f"line Teff {_number(estimate.line_temperatures_k.get(line), 7)} K."
+            "<br/>User continuum: "
+            f"{_escape(correction.mode) if correction.enabled else 'disabled / unity'}. "
+            "Formal covariance excludes continuum-placement uncertainty."
+        )
         status += (
             f"<br/>Weighting: {_escape(fit.weighting)}; "
             f"window: {'provisional default' if fit.window_provisional else 'user override'}."
@@ -757,6 +959,25 @@ class ReviewDocument:
         self.widgets["mask_selector"].value = mask_values["selected"]
         self.widgets["mask_lower"].value = mask_values["lower"]
         self.widgets["mask_upper"].value = mask_values["upper"]
+        correction = controls.continuum
+        anchors = correction.anchors
+        continuum_values = {
+            "enabled": correction.enabled,
+            "mode": correction.mode if correction.mode != "none" else "constant",
+            "continuum_level": repr(correction.level),
+            "continuum_anchor1_x": repr(anchors[0][0]) if anchors else repr(fit.window[0]),
+            "continuum_anchor1_y": repr(anchors[0][1]) if anchors else "1.0",
+            "continuum_anchor2_x": repr(anchors[1][0]) if len(anchors) > 1 else repr(fit.window[1]),
+            "continuum_anchor2_y": repr(anchors[1][1]) if len(anchors) > 1 else "1.0",
+        }
+        continuum_values.update(self._continuum_drafts.get(line, {}))
+        self.widgets["continuum_enabled"].active = [0] if continuum_values["enabled"] else []
+        self.widgets["continuum_mode"].value = continuum_values["mode"]
+        for name in _CONTINUUM_FIELDS:
+            self.widgets[name].value = continuum_values[name]
+            is_level = name == "continuum_level"
+            self.widgets[name].disabled = ((continuum_values["mode"] == "linear") if is_level
+                                           else continuum_values["mode"] != "linear")
         self.widgets["review_note"].value = self._note_errors.get(
             line, self.session.decisions[line].note,
         )
@@ -791,6 +1012,7 @@ class ReviewDocument:
             return
         self._drafts.clear()
         self._mask_drafts.clear()
+        self._continuum_drafts.clear()
         self._mask_selection.clear()
         self._note_errors.clear()
         self._invalid_lines.clear()

@@ -301,3 +301,163 @@ def test_loopback_server_starts_serves_local_assets_and_closes(monkeypatch):
         thread.join(timeout=10)
     assert not thread.is_alive()
     assert not exceptions
+
+
+def test_manual_constant_correction_updates_only_selected_line_and_review(controller):
+    import numpy as np
+
+    original_flux = controller.session.spectrum.flux.copy()
+    original_fits = dict(controller.session.fits)
+    controller.decide_selected("accepted")
+    controller.widgets["continuum_level"].value = "1.035"
+    controller.widgets["continuum_enabled"].active = [0]
+    correction = controller.session.controls["line1"].continuum
+    assert correction.enabled and correction.mode == "constant"
+    assert correction.level == 1.035
+    assert controller.session.decisions["line1"].state == "pending"
+    assert controller.session.reviewed.temperature is None
+    assert all(controller.session.fits[line] is fit for line, fit in original_fits.items()
+               if line != "line1")
+    np.testing.assert_array_equal(controller.session.spectrum.flux, original_flux)
+    assert "Before correction:" in controller.details.text
+    assert "Current:" in controller.details.text
+    assert controller.detail_plot.continuum.data["y"][0] == 1.035
+    assert "continuum-placement uncertainty" in controller.details.text
+    click(controller.widgets["accept_line"])
+    assert controller.session.decisions["line1"].state == "accepted"
+    controller.widgets["continuum_enabled"].active = []
+    assert controller.session.decisions["line1"].state == "pending"
+    assert controller.session.fits["line1"].area_angstrom == pytest.approx(
+        original_fits["line1"].area_angstrom, abs=1e-12,
+    )
+    assert controller.session.controls["line1"].continuum.level == 1.035
+
+
+def test_linear_mouse_anchors_are_manual_and_residuals_use_corrected_data(controller):
+    import numpy as np
+    from bokeh.events import Tap
+
+    controller.widgets["continuum_mouse"].value = "anchor1"
+    rest = controller.session.fits["line1"].rest_wavelength_air_angstrom
+    controller.doc.callbacks.trigger_event(Tap(model=controller.detail_plot.profile,
+                                               x=rest-2.8, y=1.015, sx=10, sy=10))
+    controller.widgets["continuum_mouse"].value = "anchor2"
+    controller.doc.callbacks.trigger_event(Tap(model=controller.detail_plot.profile,
+                                               x=rest+2.8, y=1.045, sx=10, sy=10))
+    correction = controller.session.controls["line1"].continuum
+    assert correction.anchors == ((rest-2.8, 1.015), (rest+2.8, 1.045))
+    assert correction.enabled and correction.mode == "linear"
+    assert "continuum_anchor_extrapolation" in controller.session.fits["line1"].flags
+    plots = controller.detail_plot
+    data_x = np.asarray(plots.used.data["x"])
+    expected_c = 1.015 + (data_x-(rest-2.8))*(1.045-1.015)/5.6
+    spectrum = controller.session.spectrum
+    indices = np.searchsorted(spectrum.wavelength_air_angstrom, data_x)
+    expected_y = spectrum.flux[indices]/expected_c
+    np.testing.assert_allclose(plots.used.data["y"], expected_y, atol=1e-13)
+    from sc_teff_method.fitting import gaussian_absorption
+    np.testing.assert_allclose(
+        plots.residual_used.data["y"],
+        expected_y-gaussian_absorption(data_x, controller.session.fits["line1"].parameters),
+        atol=1e-13,
+    )
+    assert len(plots.anchors.data["x"]) == 2
+    # Taps may move anchors; they never silently add exclusion intervals.
+    assert not controller.session.controls["line1"].excluded_regions
+    controller.widgets["continuum_anchor2_y"].value = "1.025"
+    assert controller.session.controls["line1"].continuum.anchors[1][1] == 1.025
+
+
+@pytest.mark.parametrize("bad", ["0", "-0.2", "nan", "inf", "not a continuum"])
+def test_invalid_continuum_draft_invalidates_approval_survives_navigation_and_resets(
+    controller, tmp_path, bad,
+):
+    controller.widgets["continuum_enabled"].active = [0]
+    controller.decide_selected("accepted")
+    previous = controller.session.fits["line1"]
+    controller.widgets["continuum_level"].value = bad
+    assert controller.session.fits["line1"] is previous
+    assert controller.session.decisions["line1"].state == "pending"
+    assert controller.widgets["accept_line"].disabled
+    controller.widgets["line_selector"].value = "line2"
+    controller.widgets["line_selector"].value = "line1"
+    assert controller.widgets["continuum_level"].value == bad
+    click(controller.widgets["save_review"])
+    assert not (tmp_path / "review.json").exists()
+    click(controller.widgets["reset_continuum"])
+    assert not controller.widgets["accept_line"].disabled
+    assert not controller.session.controls["line1"].continuum.enabled
+    assert controller.session.decisions["line1"].state == "pending"
+
+
+def test_remove_replace_anchor_and_restore_correction_review(controller, tmp_path):
+    from bokeh.events import Tap
+
+    controller.widgets["continuum_mode"].value = "linear"
+    controller.widgets["continuum_enabled"].active = [0]
+    controller.widgets["continuum_anchor2_y"].value = "1.02"
+    controller.decide_selected("accepted")
+    click(controller.widgets["continuum_remove_anchor2"])
+    assert controller.widgets["accept_line"].disabled
+    assert controller.session.decisions["line1"].state == "pending"
+    assert controller.widgets["continuum_anchor2_x"].value == ""
+    controller.widgets["continuum_mouse"].value = "anchor2"
+    rest = controller.session.fits["line1"].rest_wavelength_air_angstrom
+    controller.doc.callbacks.trigger_event(Tap(model=controller.detail_plot.profile,
+                                               x=rest+3.0, y=1.03, sx=10, sy=10))
+    assert not controller.widgets["accept_line"].disabled
+    controller.decide_selected("accepted")
+    before = controller.session.fits["line1"]
+    click(controller.widgets["save_review"])
+    assert (tmp_path / "review.json").exists()
+    click(controller.widgets["reset_continuum"])
+    click(controller.widgets["load_review"])
+    assert controller.session.fits["line1"].area_angstrom == before.area_angstrom
+    assert controller.session.decisions["line1"].state == "accepted"
+    assert controller.widgets["continuum_enabled"].active == [0]
+    assert controller.widgets["continuum_anchor2_y"].value == "1.03"
+
+
+def test_disable_invalid_anchor_draft_restores_fitting_without_changing_original(controller):
+    controller.widgets["continuum_mode"].value = "linear"
+    controller.widgets["continuum_enabled"].active = [0]
+    controller.decide_selected("accepted")
+    controller.widgets["continuum_anchor2_y"].value = "0"
+    assert controller.widgets["accept_line"].disabled
+    controller.widgets["continuum_enabled"].active = []
+    assert not controller.widgets["accept_line"].disabled
+    assert not controller.session.controls["line1"].continuum.enabled
+    assert controller.session.decisions["line1"].state == "pending"
+    assert "refitted" in controller.message.text
+
+
+def test_continuum_reset_preserves_mask_and_window(controller):
+    rest = controller.session.fits["line1"].rest_wavelength_air_angstrom
+    controller.widgets["window_lower"].value = str(rest-2.8)
+    controller.widgets["mask_lower"].value = str(rest+1.2)
+    controller.widgets["mask_upper"].value = str(rest+1.7)
+    click(controller.widgets["mask_add"])
+    before = controller.session.controls["line1"]
+    controller.widgets["continuum_level"].value = "1.035"
+    controller.widgets["continuum_enabled"].active = [0]
+    click(controller.widgets["reset_continuum"])
+    after = controller.session.controls["line1"]
+    assert after.window == before.window
+    assert after.excluded_regions == before.excluded_regions
+    assert after.initial == before.initial
+    assert not after.continuum.enabled
+
+
+def test_late_continuum_value_input_event_does_not_reinvalidate_a_committed_edit(controller):
+    controller.widgets["continuum_enabled"].active = [0]
+    controller.widgets["continuum_level"].value = "1.025"
+    assert not controller.widgets["accept_line"].disabled
+    controller.decide_selected("accepted")
+    # Bokeh may deliver a last value_input update after the committed value event.
+    controller._continuum_draft_callback("continuum_level")("value_input", "1.0", "1.025")
+    assert controller.session.decisions["line1"].state == "accepted"
+    assert not controller.widgets["accept_line"].disabled
+    # A different visible draft still invalidates scientific approval immediately.
+    controller._continuum_draft_callback("continuum_level")("value_input", "1.025", "0")
+    assert controller.session.decisions["line1"].state == "pending"
+    assert controller.widgets["accept_line"].disabled

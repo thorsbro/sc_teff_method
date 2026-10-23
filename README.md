@@ -56,7 +56,17 @@ sc-teff inspect review-demo/spectrum.csv \
 Inspect all nine profile/residual panels, then select a line for a larger view.
 Adjust its fitting window and initial parameters, drag across the profile to add
 a mask, or edit mask boundaries numerically. Only the selected line is refitted
-from the original in-memory spectrum; continuum remains fixed at unity.
+from the original in-memory spectrum. The Gaussian model keeps a continuum of
+unity; optional **manual local continuum adjustment** first divides a working
+copy of flux and supplied pixel uncertainty by your chosen constant or straight
+line. The original spectrum is unchanged and corrections never accumulate.
+
+In the detailed view, enable continuum adjustment, choose constant or linear,
+and enter a level or two rest-air-Å anchors. Mouse placement and numerical edits
+are supported. Original flux, corrected fit pixels, the chosen continuum and
+corrected residuals have separate labels. Compare the line area and temperature
+before/after, then explicitly accept the revised measurement. Resetting to unity
+or changing any continuum control also clears prior acceptance.
 
 **Only explicitly Accepted, valid fits enter the reviewed temperature.** Pending
 and Rejected lines do not contribute. Convergence never means scientific
@@ -83,7 +93,8 @@ rejected. Existing output directories require explicit overwrite permission;
 source/configuration files remain protected. The original `fit --fit-config`
 workflow remains available.
 
-**Frozen subset RMSE does not validate arbitrary post-hoc manual selection.**
+**Frozen subset RMSE does not validate arbitrary post-hoc manual selection or
+newly chosen continuum corrections.**
 Review cannot guarantee an unbiased result. Formal Gaussian errors exclude
 continuum/profile systematics; accuracy depends on measurement and observational
 compatibility. The analytical demonstration establishes software correctness,
@@ -93,6 +104,32 @@ See the [interactive review guide](docs/interactive_review.md) for the complete
 exercise, review-file rules and tests.
 
 ![Local line review using analytical synthetic spectra only](docs/images/interactive_review.png)
+
+For the continuum exercise, generate a separate fully analytical spectrum:
+
+```bash
+python examples/demo_continuum_review.py --output-dir continuum-demo --scripted-review
+sc-teff inspect continuum-demo/spectrum.csv --review-file continuum-demo/review.json
+sc-teff replay continuum-demo/spectrum.csv --review-file continuum-demo/review.json \
+  --output-dir continuum-results --plot-format both
+```
+
+It includes invented unity/constant/sloped continua, a neighbouring blend,
+masked/incomplete coverage and deliberately incorrect anchors. Review JSON
+version 2 records continuum controls and configurable warning thresholds;
+version 1 reviews remain readable with the original unity continuum. Replay
+recalculates all measurements from the unchanged, checksum-verified source.
+
+![Manual continuum review using analytical synthetic spectra only](docs/images/continuum_review.png)
+
+The input must still be approximately continuum-normalised. These entirely
+user-controlled corrections do not reproduce the paper's continuum procedures.
+Continuum placement influences Gaussian areas and may introduce systematic
+differences from the empirical calibration's measurement definition. Formal
+Gaussian covariance excludes continuum-placement uncertainty. The user is
+responsible for evaluating the anchors; an improved-looking fit does not
+establish a more accurate temperature. Analytical tests establish numerical
+correctness, not accuracy for other instruments.
 
 ## Fit a prepared spectrum
 
@@ -374,10 +411,10 @@ preserved. New spectrum examples and tests generate analytical Gaussian arrays
 at run time, using invented parameters and fixed noise seeds. **No observational
 spectra, extracts, wavelength–flux arrays or observed spectral plots are included
 or used for development.** Committed spectral figures and the interface preview
-come from analytical examples only. FITS input, automatic continuum normalisation, HFS
-fitting, rectangular-band measurements, interactive continuum editing, stellar
-spectral synthesis, calibration refitting and new observational validation are
-outside this PR's scope.
+come from analytical examples only. FITS input, automatic continuum finding,
+higher-order continuum polynomials, HFS fitting, rectangular-band measurements,
+stellar spectral synthesis, calibration refitting and new observational
+validation are outside scope.
 
 ## Development
 

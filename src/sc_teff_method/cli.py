@@ -130,6 +130,14 @@ def _parser() -> argparse.ArgumentParser:
         "--no-browser", action="store_true", help="Print local URL without opening a tab"
     )
     inspect.add_argument("--label", default="Input spectrum")
+    inspect.add_argument(
+        "--continuum-warning-deviation", type=float,
+        help="Provisional warning threshold for abs(C-1); default 0.1",
+    )
+    inspect.add_argument(
+        "--no-continuum-extrapolation-warning", action="store_true", default=None,
+        help="Disable the provisional warning for linear anchors inside the fit window",
+    )
     replay = commands.add_parser("replay", help="Reproduce a saved review without a browser")
     replay.add_argument("spectrum", type=Path)
     replay.add_argument("--review-file", type=Path, required=True)
@@ -271,6 +279,7 @@ def _restore_review(spectrum_path, review_path):
 
 
 def _run_inspect(args) -> int:
+    from .continuum import ContinuumOptions
     from .inspection import serve_inspection
     from .review import ReviewSession
     from .review_io import load_spectrum_identity
@@ -297,6 +306,8 @@ def _run_inspect(args) -> int:
             "reference_temperature_k",
             "fit_config",
             "validation_scope",
+            "continuum_warning_deviation",
+            "no_continuum_extrapolation_warning",
         )
         if (
             any(getattr(args, name) is not None for name in scientific_arguments)
@@ -340,6 +351,13 @@ def _run_inspect(args) -> int:
             excluded_regions=regions,
             excluded_lines=args.exclude_line,
             options=options,
+            continuum_options=ContinuumOptions(
+                max_deviation_warning=(
+                    0.1 if args.continuum_warning_deviation is None
+                    else args.continuum_warning_deviation
+                ),
+                warn_extrapolation=not args.no_continuum_extrapolation_warning,
+            ),
         )
     serve_inspection(
         session,

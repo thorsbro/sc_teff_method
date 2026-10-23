@@ -23,6 +23,7 @@ import numpy as np
 from . import __version__
 from ._data import CALIBRATION_ID, LINE_IDS, SCOPES, get_calibration
 from .api import _finite_real, estimate_temperature, subset_performance
+from .continuum import ContinuumCorrection, ContinuumOptions, apply_continuum
 from .fitting import (
     FitOptions,
     GaussianParameters,
@@ -37,11 +38,12 @@ from .spectrum import Spectrum, _doppler_factor, _velocity
 from .workflow import SpectralEstimate, estimate_from_spectrum
 
 REVIEW_FORMAT = "sc-teff-review"
-REVIEW_SCHEMA_VERSION = 1
+REVIEW_SCHEMA_VERSION = 2
 REVIEW_STATES = ("pending", "accepted", "rejected")
 SELECTION_WARNING = (
     "Manual line selection can introduce selection effects. Frozen exact-subset bias and RMSE "
-    "do not validate an arbitrary post-hoc line-selection procedure."
+    "do not validate an arbitrary post-hoc line-selection procedure or newly chosen "
+    "continuum corrections."
 )
 _UNSET = object()
 _LOADER_DEFAULTS = {
@@ -79,6 +81,7 @@ class LineControls:
     initial: GaussianParameters | None = None
     excluded_regions: tuple[tuple[float, float], ...] = ()
     numerically_excluded: bool = False
+    continuum: ContinuumCorrection = ContinuumCorrection()
 
 
 @dataclass(frozen=True)
@@ -191,8 +194,13 @@ def _snapshot(fit: LineFit) -> dict:
     return {**result, "fingerprint": hashlib.sha256(encoded.encode()).hexdigest()}
 
 
-def _controls_fingerprint(controls: LineControls, options: FitOptions) -> str:
-    payload = {"controls": _plain(asdict(controls)), "fit_options": asdict(options)}
+def _controls_fingerprint(
+    controls: LineControls, options: FitOptions, continuum_options: ContinuumOptions,
+) -> str:
+    payload = {
+        "controls": _plain(asdict(controls)), "fit_options": asdict(options),
+        "continuum_options": asdict(continuum_options),
+    }
     encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), allow_nan=False)
     return hashlib.sha256(encoded.encode()).hexdigest()
 
@@ -284,6 +292,8 @@ def _validate_snapshot(value, line: str) -> None:
 
 
 def _validate_payload(payload) -> dict:
+    legacy = isinstance(payload, Mapping) and payload.get("schema_version") == 1
+    extra_keys = () if legacy else ("continuum_options",)
     _keys(
         payload,
         (
@@ -296,13 +306,14 @@ def _validate_payload(payload) -> dict:
             "lines",
             "notes",
             "scientific_warnings",
+            *extra_keys,
         ),
         "review",
     )
     if (
         payload["format"] != REVIEW_FORMAT
         or type(payload["schema_version"]) is not int
-        or payload["schema_version"] != REVIEW_SCHEMA_VERSION
+        or payload["schema_version"] not in (1, REVIEW_SCHEMA_VERSION)
     ):
         raise ValueError("Unsupported review format or schema version")
     # JSON round-tripping rejects non-finite programmatic fields too.
@@ -381,6 +392,10 @@ def _validate_payload(payload) -> dict:
         options = FitOptions(**result["fit_options"])
     except TypeError as exc:
         raise ValueError("Invalid fit_options fields") from exc
+    if legacy:
+        result["continuum_options"] = asdict(ContinuumOptions())
+    _keys(result["continuum_options"], asdict(ContinuumOptions()), "continuum_options")
+    continuum_options = ContinuumOptions(**result["continuum_options"])
     _keys(result["lines"], LINE_IDS, "lines")
     for line in LINE_IDS:
         entry = _keys(result["lines"][line], ("controls", "decision", "fit"), line)
@@ -391,9 +406,13 @@ def _validate_payload(payload) -> dict:
                 "initial",
                 "excluded_regions",
                 "numerically_excluded",
+                *(() if legacy else ("continuum",)),
             ),
             f"{line}.controls",
         )
+        if not legacy:
+            _keys(controls["continuum"], asdict(ContinuumCorrection()), f"{line}.continuum")
+            ContinuumCorrection(**controls["continuum"])
         if not isinstance(controls["numerically_excluded"], bool):
             raise ValueError("numerically_excluded must be boolean")
         rest = specification.lines[line].wavelength_air_angstrom
@@ -427,6 +446,30 @@ def _validate_payload(payload) -> dict:
             _hash_string(decision["controls_fingerprint"], f"{line} acceptance fingerprint")
         elif decision["controls_fingerprint"] is not None:
             raise ValueError("Only accepted decisions may carry an acceptance fingerprint")
+        if legacy:
+            # PR 3 fingerprints exclude continuum controls/options. Verify that
+            # historical approval before migrating to the identity continuum.
+            if decision["state"] == "accepted":
+                encoded = json.dumps(
+                    {"controls": controls, "fit_options": result["fit_options"]},
+                    sort_keys=True, separators=(",", ":"), allow_nan=False,
+                )
+                if hashlib.sha256(encoded.encode()).hexdigest() != decision["controls_fingerprint"]:
+                    raise ValueError(
+                        f"Accepted controls changed for {line}; inspect and approve again"
+                    )
+            controls["continuum"] = _plain(asdict(ContinuumCorrection()))
+            if decision["state"] == "accepted":
+                normalised = LineControls(
+                    window=tuple(controls["window"]) if controls["window"] is not None else None,
+                    initial=(GaussianParameters(**controls["initial"])
+                             if controls["initial"] is not None else None),
+                    excluded_regions=_regions(controls["excluded_regions"], "excluded_regions"),
+                    numerically_excluded=controls["numerically_excluded"],
+                )
+                decision["controls_fingerprint"] = _controls_fingerprint(
+                    normalised, options, continuum_options,
+                )
         snapshot = _keys(entry["fit"], (*_SNAPSHOT_FIELDS, "fingerprint"), f"{line}.fit")
         _validate_snapshot(snapshot, line)
         expected = _hash_string(snapshot["fingerprint"], f"{line} fit fingerprint")
@@ -442,6 +485,7 @@ def _validate_payload(payload) -> dict:
         raise ValueError("scientific_warnings must be a bounded list")
     for warning in result["scientific_warnings"]:
         _text(warning, "scientific warning", maximum=4000)
+    result["schema_version"] = REVIEW_SCHEMA_VERSION
     return result
 
 
@@ -475,6 +519,7 @@ class ReviewSession:
                 "reference_temperature_k",
                 "validation_scope",
                 "options",
+                "continuum_options",
             }
             and name in self.__dict__
         ):
@@ -495,8 +540,13 @@ class ReviewSession:
         excluded_regions=None,
         excluded_lines=(),
         options=None,
+        continuum_options: ContinuumOptions | None = None,
     ):
         identity = _identity(input_identity)
+        if continuum_options is None:
+            continuum_options = ContinuumOptions()
+        if not isinstance(continuum_options, ContinuumOptions):
+            raise TypeError("continuum_options must be ContinuumOptions")
         baseline = estimate_from_spectrum(
             spectrum,
             configuration=configuration,
@@ -515,10 +565,12 @@ class ReviewSession:
         self.reference_temperature_k = baseline.reference_temperature_k
         self.validation_scope = baseline.validation_scope
         self.options = baseline.fit_options
+        self.continuum_options = continuum_options
         self._identity = identity
         self._prepared_sha256 = _prepared_digest(spectrum)
         self._baseline = baseline
         self._fits = dict(baseline.fits)
+        self._uncorrected_fits = dict(baseline.fits)
         self._controls = {
             line: LineControls(
                 window=fit.window if line in (windows or {}) else None,
@@ -556,6 +608,20 @@ class ReviewSession:
         return MappingProxyType(self._fits)
 
     @property
+    def uncorrected_fits(self) -> Mapping[str, LineFit]:
+        """Unity-continuum comparison using the current window/start/masks."""
+        return MappingProxyType(self._uncorrected_fits)
+
+    def corrected_spectrum(self, line_id: str) -> Spectrum:
+        """Working input actually used by the selected fit; original stays immutable."""
+        line = _line_id(line_id)
+        spectrum, _ = apply_continuum(
+            self.spectrum, self._controls[line].continuum, window=self._fits[line].window,
+            excluded_regions=self._controls[line].excluded_regions, options=self.continuum_options,
+        )
+        return spectrum
+
+    @property
     def controls(self) -> Mapping[str, LineControls]:
         return MappingProxyType(self._controls)
 
@@ -572,7 +638,8 @@ class ReviewSession:
         self._notes = _text(value, "notes")
 
     def edit_line(
-        self, line_id: str, *, window=_UNSET, initial=_UNSET, excluded_regions=_UNSET
+        self, line_id: str, *, window=_UNSET, initial=_UNSET, excluded_regions=_UNSET,
+        continuum=_UNSET,
     ) -> LineFit:
         """Atomically apply controls, refit only this line, and require fresh review."""
         line = _line_id(line_id)
@@ -582,21 +649,42 @@ class ReviewSession:
         selected_regions = (
             previous.excluded_regions if excluded_regions is _UNSET else excluded_regions
         )
-        measured = fit_gaussian_lines(
-            self.spectrum,
+        selected_continuum = previous.continuum if continuum is _UNSET else continuum
+        if not isinstance(selected_continuum, ContinuumCorrection):
+            raise TypeError("continuum must be a ContinuumCorrection")
+        rest = get_calibration(self.configuration).lines[line].wavelength_air_angstrom
+        effective_window = (
+            (rest-self.options.window_half_width_angstrom,
+             rest+self.options.window_half_width_angstrom)
+            if selected_window is None else selected_window
+        )
+        working, continuum_flags = apply_continuum(
+            self.spectrum, selected_continuum, window=effective_window,
+            excluded_regions=selected_regions, options=self.continuum_options,
+        )
+        arguments = dict(
             windows={line: selected_window} if selected_window is not None else None,
             initial_parameters={line: selected_initial} if selected_initial is not None else None,
             excluded_regions={line: selected_regions},
             excluded_lines=tuple(other for other in LINE_IDS if other != line),
             options=self.options,
-        )[line]
+        )
+        measured = fit_gaussian_lines(working, **arguments)[line]
+        uncorrected = (
+            measured if working is self.spectrum
+            else fit_gaussian_lines(self.spectrum, **arguments)[line]
+        )
+        if continuum_flags:
+            measured = replace(measured, flags=(*measured.flags, *continuum_flags))
         controls = LineControls(
             measured.window if selected_window is not None else None,
             selected_initial,
             measured.excluded_regions,
+            continuum=selected_continuum,
         )
         self._controls[line] = controls
         self._fits[line] = measured
+        self._uncorrected_fits[line] = uncorrected
         self._decisions[line] = LineDecision()
         return measured
 
@@ -605,7 +693,14 @@ class ReviewSession:
 
     def reset_line(self, line_id: str) -> LineFit:
         """Restore the PR 2 default window/auto start; remove added interval masks."""
-        return self.edit_line(line_id, window=None, initial=None, excluded_regions=())
+        return self.edit_line(
+            line_id, window=None, initial=None, excluded_regions=(),
+            continuum=ContinuumCorrection(),
+        )
+
+    def reset_continuum(self, line_id: str) -> LineFit:
+        """Restore unity, retaining the selected line's other fitting controls."""
+        return self.edit_line(line_id, continuum=ContinuumCorrection())
 
     def decide(self, line_id: str, state: str, note: str = "") -> None:
         line = _line_id(line_id)
@@ -617,7 +712,7 @@ class ReviewSession:
         self._decisions[line] = LineDecision(
             state,
             note,
-            _controls_fingerprint(self._controls[line], self.options)
+            _controls_fingerprint(self._controls[line], self.options, self.continuum_options)
             if state == "accepted"
             else None,
         )
@@ -665,6 +760,13 @@ class ReviewSession:
             "Analytical synthetic tests establish software correctness, "
             "not instrument transfer accuracy.",
         ]
+        if any(control.continuum.active for control in self._controls.values()):
+            warnings.append(
+                "Local continuum corrections are entirely user-controlled and do not reproduce "
+                "the calibration paper's continuum procedures. Placement changes Gaussian areas "
+                "and can introduce systematic measurement differences; formal Gaussian errors "
+                "exclude continuum-placement uncertainty. The user must assess each correction."
+            )
         if any(fit.window_provisional for fit in self._fits.values()):
             warnings.append(
                 "Default symmetric fitting windows are provisional and may need adjustment."
@@ -714,6 +816,13 @@ class ReviewSession:
             ),
             target_passes_declared_strength_cut=passes_cut,
             warnings=tuple(warnings),
+            continuum_corrections=(
+                MappingProxyType({
+                    line: control.continuum for line, control in self._controls.items()
+                })
+                if any(control.continuum != ContinuumCorrection()
+                       for control in self._controls.values()) else None
+            ),
         )
 
     def to_dict(self) -> dict:
@@ -746,6 +855,7 @@ class ReviewSession:
                 "prepared_spectrum_sha256": self._prepared_sha256,
             },
             "fit_options": asdict(self.options),
+            "continuum_options": asdict(self.continuum_options),
             "lines": {
                 line: {
                     "controls": _plain(asdict(self._controls[line])),
@@ -803,11 +913,27 @@ class ReviewSession:
             excluded_regions=regions,
             excluded_lines=excluded_lines,
             options=FitOptions(**payload["fit_options"]),
+            continuum_options=ContinuumOptions(**payload["continuum_options"]),
         )
         for line in LINE_IDS:
+            correction = ContinuumCorrection(**payload["lines"][line]["controls"]["continuum"])
+            if correction != ContinuumCorrection():
+                if session._controls[line].numerically_excluded:
+                    # Preserve unavailable/excluded state, while retaining manual
+                    # controls for a later deliberate refit.
+                    session._controls[line] = replace(session._controls[line], continuum=correction)
+                    apply_continuum(
+                        spectrum, correction, window=session._fits[line].window,
+                        excluded_regions=session._controls[line].excluded_regions,
+                        options=session.continuum_options,
+                    )
+                else:
+                    session.edit_line(line, continuum=correction)
             decision = payload["lines"][line]["decision"]
             if decision["state"] == "accepted" and decision["controls_fingerprint"] != (
-                _controls_fingerprint(session._controls[line], session.options)
+                _controls_fingerprint(
+                    session._controls[line], session.options, session.continuum_options,
+                )
             ):
                 raise ValueError(f"Accepted controls changed for {line}; inspect and approve again")
             if decision["state"] == "accepted" and not _snapshot_matches(
