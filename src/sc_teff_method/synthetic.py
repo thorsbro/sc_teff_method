@@ -165,3 +165,40 @@ def make_synthetic_spectrum(
         description=descriptions[case],
         seed=seed,
     )
+
+
+def make_review_demo(*, seed: int = DEFAULT_SYNTHETIC_SEED) -> SyntheticCase:
+    """Build an analytical inspection exercise without changing the six PR 2 cases.
+
+    Start from the invented ``blends`` profiles, add independent Gaussian noise
+    with sigma 0.0015, omit the lower part of line3's window, and explicitly mask
+    a wing interval of line2. Line4 has an invented neighbouring absorption
+    feature; line6 deliberately has the wrong continuum and should be rejected
+    in the example. These choices are mathematical, not observation-derived.
+    """
+    original = make_synthetic_spectrum("blends", seed=seed)
+    wavelength = original.wavelength_air_angstrom
+    references = get_calibration().lines
+    line3 = references["line3"].wavelength_air_angstrom
+    keep = ~((wavelength >= line3-5) & (wavelength < line3-1.8))
+    wavelength = wavelength[keep]
+    noise_sigma = 0.0015
+    rng = np.random.default_rng(original.seed)
+    flux = original.flux[keep] + rng.normal(0, noise_sigma, wavelength.size)
+    line2 = references["line2"].wavelength_air_angstrom
+    mask = (wavelength >= line2+1.35) & (wavelength <= line2+1.65)
+    return SyntheticCase(
+        name="review",
+        wavelength_air_angstrom=_read_only(wavelength),
+        flux=_read_only(flux),
+        uncertainty=_read_only(np.full(wavelength.shape, noise_sigma)),
+        mask=_read_only(mask, dtype=bool),
+        truth=original.truth,
+        rv_kms=None,
+        description=(
+            "Analytical Gaussian review exercise: invented neighbours at line4/line8, "
+            "a deliberately wrong continuum at line6, incomplete line3 coverage, a "
+            "pre-masked line2 wing, and independent N(0, 0.0015^2) noise."
+        ),
+        seed=original.seed,
+    )

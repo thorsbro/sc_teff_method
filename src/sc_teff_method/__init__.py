@@ -22,6 +22,8 @@ _SPECTRAL_EXPORTS = {
     "SpectralEstimate": "workflow", "fit_spectrum": "workflow",
     "estimate_from_spectrum": "workflow", "plot_diagnostics": "diagnostics",
     "write_fit_outputs": "outputs",
+    "ReviewSession": "review", "read_review": "review",
+    "write_review_outputs": "review_exports",
 }
 
 
