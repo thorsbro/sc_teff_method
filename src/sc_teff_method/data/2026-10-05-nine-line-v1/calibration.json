@@ -1,0 +1,371 @@
+{
+  "schema_version": 1,
+  "calibration_id": "2026-10-05-nine-line-v1",
+  "measurement_source": "gaussian",
+  "temperature_scale_id": "nandakumar2023_igrins",
+  "declared_strength_selection": {
+    "minimum_angstrom": 0.08,
+    "maximum_angstrom": null,
+    "inclusive": true
+  },
+  "configurations": {
+    "nandakumar_feh": {
+      "model_id": "legacy_direct_metallicity_0p08",
+      "requires_feh": true,
+      "fit_snapshot": "2026-10-04-govind44-paper-v1",
+      "validation_snapshot": "2026-10-04-govind44-loocv-paper-v1",
+      "lines": {
+        "line1": {
+          "wavelength_air_angstrom": 21730.467,
+          "n_training": 44,
+          "a_k_per_angstrom": -703.5801681541623,
+          "b_k_per_dex": 147.32323521379692,
+          "c_k": 3867.3627202507514,
+          "training_strength_range_angstrom": [
+            0.10161381736795086,
+            0.8263631273086909
+          ],
+          "reference_temperature_range_k": [
+            3347.0,
+            3800.0
+          ],
+          "reference_feh_range_dex": [
+            -0.92,
+            0.25
+          ]
+        },
+        "line2": {
+          "wavelength_air_angstrom": 21812.169,
+          "n_training": 44,
+          "a_k_per_angstrom": -967.351227943491,
+          "b_k_per_dex": 146.666842831237,
+          "c_k": 3961.0140527249287,
+          "training_strength_range_angstrom": [
+            0.09111906043197379,
+            0.6659131548540577
+          ],
+          "reference_temperature_range_k": [
+            3347.0,
+            3800.0
+          ],
+          "reference_feh_range_dex": [
+            -0.92,
+            0.25
+          ]
+        },
+        "line3": {
+          "wavelength_air_angstrom": 21842.781,
+          "n_training": 43,
+          "a_k_per_angstrom": -980.0119703763753,
+          "b_k_per_dex": 185.49733940559386,
+          "c_k": 3888.3173950435325,
+          "training_strength_range_angstrom": [
+            0.10716645249835126,
+            0.5676021396364737
+          ],
+          "reference_temperature_range_k": [
+            3347.0,
+            3742.0
+          ],
+          "reference_feh_range_dex": [
+            -0.66,
+            0.25
+          ]
+        },
+        "line4": {
+          "wavelength_air_angstrom": 22024.168,
+          "n_training": 44,
+          "a_k_per_angstrom": -588.5645600957511,
+          "b_k_per_dex": 162.433855450912,
+          "c_k": 3955.558550173012,
+          "training_strength_range_angstrom": [
+            0.16727295500453188,
+            1.1085889844870502
+          ],
+          "reference_temperature_range_k": [
+            3347.0,
+            3800.0
+          ],
+          "reference_feh_range_dex": [
+            -0.92,
+            0.25
+          ]
+        },
+        "line5": {
+          "wavelength_air_angstrom": 22051.984,
+          "n_training": 44,
+          "a_k_per_angstrom": -818.8470140122054,
+          "b_k_per_dex": 146.67928973024385,
+          "c_k": 4284.240277763331,
+          "training_strength_range_angstrom": [
+            0.4845349917533922,
+            1.1814012950659443
+          ],
+          "reference_temperature_range_k": [
+            3347.0,
+            3800.0
+          ],
+          "reference_feh_range_dex": [
+            -0.92,
+            0.25
+          ]
+        },
+        "line6": {
+          "wavelength_air_angstrom": 22065.302,
+          "n_training": 44,
+          "a_k_per_angstrom": -1058.0720617212864,
+          "b_k_per_dex": 100.45514037855023,
+          "c_k": 4143.66788909552,
+          "training_strength_range_angstrom": [
+            0.28070590261590356,
+            0.7774828502389918
+          ],
+          "reference_temperature_range_k": [
+            3347.0,
+            3800.0
+          ],
+          "reference_feh_range_dex": [
+            -0.92,
+            0.25
+          ]
+        },
+        "line7": {
+          "wavelength_air_angstrom": 22266.719,
+          "n_training": 44,
+          "a_k_per_angstrom": -1209.0299995170699,
+          "b_k_per_dex": 136.49147910391622,
+          "c_k": 4140.082787914298,
+          "training_strength_range_angstrom": [
+            0.20959261390258738,
+            0.6855541479444808
+          ],
+          "reference_temperature_range_k": [
+            3347.0,
+            3800.0
+          ],
+          "reference_feh_range_dex": [
+            -0.92,
+            0.25
+          ]
+        },
+        "line8": {
+          "wavelength_air_angstrom": 22394.703,
+          "n_training": 44,
+          "a_k_per_angstrom": -1101.08547197055,
+          "b_k_per_dex": 116.01250439848167,
+          "c_k": 4082.92609093961,
+          "training_strength_range_angstrom": [
+            0.20857203837314284,
+            0.652836695879547
+          ],
+          "reference_temperature_range_k": [
+            3347.0,
+            3800.0
+          ],
+          "reference_feh_range_dex": [
+            -0.92,
+            0.25
+          ]
+        },
+        "line9": {
+          "wavelength_air_angstrom": 22656.776,
+          "n_training": 44,
+          "a_k_per_angstrom": -522.0957428389869,
+          "b_k_per_dex": 152.23059396575542,
+          "c_k": 3922.514129856434,
+          "training_strength_range_angstrom": [
+            0.1466484159827285,
+            1.2119537820665647
+          ],
+          "reference_temperature_range_k": [
+            3347.0,
+            3800.0
+          ],
+          "reference_feh_range_dex": [
+            -0.92,
+            0.25
+          ]
+        }
+      }
+    },
+    "nandakumar_no_feh": {
+      "model_id": "legacy_direct_1d_0p08",
+      "requires_feh": false,
+      "fit_snapshot": "2026-10-04-govind44-paper-v1",
+      "validation_snapshot": "2026-10-04-govind44-loocv-paper-v1",
+      "lines": {
+        "line1": {
+          "wavelength_air_angstrom": 21730.467,
+          "n_training": 44,
+          "a_k_per_angstrom": -505.57097705952475,
+          "b_k_per_dex": null,
+          "c_k": 3758.9372012411204,
+          "training_strength_range_angstrom": [
+            0.10161381736795086,
+            0.8263631273086909
+          ],
+          "reference_temperature_range_k": [
+            3347.0,
+            3800.0
+          ],
+          "reference_feh_range_dex": [
+            -0.92,
+            0.25
+          ]
+        },
+        "line2": {
+          "wavelength_air_angstrom": 21812.169,
+          "n_training": 44,
+          "a_k_per_angstrom": -701.3682764574772,
+          "b_k_per_dex": null,
+          "c_k": 3828.861342763656,
+          "training_strength_range_angstrom": [
+            0.09111906043197379,
+            0.6659131548540577
+          ],
+          "reference_temperature_range_k": [
+            3347.0,
+            3800.0
+          ],
+          "reference_feh_range_dex": [
+            -0.92,
+            0.25
+          ]
+        },
+        "line3": {
+          "wavelength_air_angstrom": 21842.781,
+          "n_training": 43,
+          "a_k_per_angstrom": -642.0966247871032,
+          "b_k_per_dex": null,
+          "c_k": 3749.6490819499086,
+          "training_strength_range_angstrom": [
+            0.10716645249835126,
+            0.5676021396364737
+          ],
+          "reference_temperature_range_k": [
+            3347.0,
+            3742.0
+          ],
+          "reference_feh_range_dex": [
+            -0.66,
+            0.25
+          ]
+        },
+        "line4": {
+          "wavelength_air_angstrom": 22024.168,
+          "n_training": 44,
+          "a_k_per_angstrom": -412.24573689786956,
+          "b_k_per_dex": null,
+          "c_k": 3813.546529773409,
+          "training_strength_range_angstrom": [
+            0.16727295500453188,
+            1.1085889844870502
+          ],
+          "reference_temperature_range_k": [
+            3347.0,
+            3800.0
+          ],
+          "reference_feh_range_dex": [
+            -0.92,
+            0.25
+          ]
+        },
+        "line5": {
+          "wavelength_air_angstrom": 22051.984,
+          "n_training": 44,
+          "a_k_per_angstrom": -589.9961953641017,
+          "b_k_per_dex": null,
+          "c_k": 4059.9679818535633,
+          "training_strength_range_angstrom": [
+            0.4845349917533922,
+            1.1814012950659443
+          ],
+          "reference_temperature_range_k": [
+            3347.0,
+            3800.0
+          ],
+          "reference_feh_range_dex": [
+            -0.92,
+            0.25
+          ]
+        },
+        "line6": {
+          "wavelength_air_angstrom": 22065.302,
+          "n_training": 44,
+          "a_k_per_angstrom": -852.5620171095103,
+          "b_k_per_dex": null,
+          "c_k": 4013.8986688963932,
+          "training_strength_range_angstrom": [
+            0.28070590261590356,
+            0.7774828502389918
+          ],
+          "reference_temperature_range_k": [
+            3347.0,
+            3800.0
+          ],
+          "reference_feh_range_dex": [
+            -0.92,
+            0.25
+          ]
+        },
+        "line7": {
+          "wavelength_air_angstrom": 22266.719,
+          "n_training": 44,
+          "a_k_per_angstrom": -893.4887191640138,
+          "b_k_per_dex": null,
+          "c_k": 3967.9218937702717,
+          "training_strength_range_angstrom": [
+            0.20959261390258738,
+            0.6855541479444808
+          ],
+          "reference_temperature_range_k": [
+            3347.0,
+            3800.0
+          ],
+          "reference_feh_range_dex": [
+            -0.92,
+            0.25
+          ]
+        },
+        "line8": {
+          "wavelength_air_angstrom": 22394.703,
+          "n_training": 44,
+          "a_k_per_angstrom": -850.5812152359536,
+          "b_k_per_dex": null,
+          "c_k": 3945.581554514609,
+          "training_strength_range_angstrom": [
+            0.20857203837314284,
+            0.652836695879547
+          ],
+          "reference_temperature_range_k": [
+            3347.0,
+            3800.0
+          ],
+          "reference_feh_range_dex": [
+            -0.92,
+            0.25
+          ]
+        },
+        "line9": {
+          "wavelength_air_angstrom": 22656.776,
+          "n_training": 44,
+          "a_k_per_angstrom": -370.08419061701335,
+          "b_k_per_dex": null,
+          "c_k": 3794.5442073393424,
+          "training_strength_range_angstrom": [
+            0.1466484159827285,
+            1.2119537820665647
+          ],
+          "reference_temperature_range_k": [
+            3347.0,
+            3800.0
+          ],
+          "reference_feh_range_dex": [
+            -0.92,
+            0.25
+          ]
+        }
+      }
+    }
+  }
+}

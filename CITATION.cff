@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+type: software
+message: >-
+  Please cite this software when using it. The final Sc I calibration-paper
+  citation remains to be verified; no paper DOI is assigned here.
+title: "sc_teff_method: K-band Sc I temperature calibration for cool giant stars"
+authors:
+  - family-names: Thorsbro
+    given-names: Brian
+version: 0.1.0
+repository-code: "https://github.com/thorsbro/sc_teff_method"
+url: "https://github.com/thorsbro/sc_teff_method"
+license: MIT
+abstract: >-
+  Python implementation of two frozen Gaussian line-area calibrations on the
+  Nandakumar et al. (2023) temperature scale, with fixed-subset empirical
+  validation statistics from the 5 October 2026 nine-line snapshot.
+keywords:
+  - astronomy
+  - stellar effective temperatures
+  - scandium
+  - cool giant stars
