@@ -202,3 +202,99 @@ def make_review_demo(*, seed: int = DEFAULT_SYNTHETIC_SEED) -> SyntheticCase:
         ),
         seed=original.seed,
     )
+
+
+@dataclass(frozen=True)
+class SyntheticContinuum:
+    """Manually prescribed mathematical continuum, independent of any data fit."""
+
+    mode: str = "none"
+    level: float = 1.0
+    anchors: tuple[tuple[float, float], ...] = ()
+
+
+@dataclass(frozen=True)
+class SyntheticContinuumCase(SyntheticCase):
+    """Toy spectrum with the exact, invented multiplicative continuum recorded."""
+
+    continuum_truth: Mapping[str, SyntheticContinuum]
+    incorrect_anchor_example: tuple[tuple[float, float], ...]
+
+
+def make_continuum_demo(
+    *, seed: int = 20261024, noise_sigma: float = 0.0,
+) -> SyntheticContinuumCase:
+    """Generate an entirely analytical manual-continuum review exercise.
+
+    The default is noiseless so the correct prescribed continuum recovers the
+    Gaussian truth to optimisation tolerance. Optional independently generated
+    Gaussian noise has standard deviation ``noise_sigma`` in the corrected
+    flux; its input uncertainty is multiplied by the same continuum. The seed
+    never selects or reproduces an observed spectrum.
+
+    Line1 has unity continuum, line2 a constant 1.035, and line3 a linear slope
+    0.006/Angstrom with intercept 1.012 at its laboratory wavelength. Line4 has
+    a constant 1.025 and an invented neighbouring Gaussian absorption. Line5
+    is unity: its deliberately incorrect example anchors illustrate a change,
+    without implying a better measurement. Line6 has a different linear slope,
+    line7 a masked continuum/wing interval, line8 incomplete lower coverage, and
+    line9 a constant 0.985. All numbers are arbitrary teaching choices.
+    """
+    if isinstance(noise_sigma, (bool, np.bool_)) or not isinstance(
+        noise_sigma, (int, float, np.integer, np.floating),
+    ):
+        raise TypeError("noise_sigma must be a finite non-negative real number")
+    noise_sigma = float(noise_sigma)
+    if not math.isfinite(noise_sigma) or noise_sigma < 0:
+        raise ValueError("noise_sigma must be a finite non-negative real number")
+    base = make_synthetic_spectrum("clean", seed=seed)
+    x = base.wavelength_air_angstrom
+    continuum = np.ones(x.shape)
+    truth = {}
+    references = get_calibration().lines
+    for line, reference in references.items():
+        rest = reference.wavelength_air_angstrom
+        region = np.abs(x-rest) <= 5
+        level, slope = {
+            "line2": (1.035, 0.0), "line3": (1.012, 0.006),
+            "line4": (1.025, 0.0), "line6": (0.992, -0.004),
+            "line9": (0.985, 0.0),
+        }.get(line, (1.0, 0.0))
+        continuum[region] = level + slope * (x[region]-rest)
+        if slope:
+            anchors = ((rest-3.0, level-3*slope), (rest+3.0, level+3*slope))
+            truth[line] = SyntheticContinuum(mode="linear", anchors=anchors)
+        elif level != 1:
+            truth[line] = SyntheticContinuum(mode="constant", level=level)
+        else:
+            truth[line] = SyntheticContinuum()
+    corrected_flux = np.array(base.flux, copy=True)
+    blend_centre = references["line4"].wavelength_air_angstrom + 1.05
+    corrected_flux -= 0.19 * np.exp(-0.5*((x-blend_centre)/0.16)**2)
+    if noise_sigma:
+        corrected_flux += np.random.default_rng(base.seed).normal(0, noise_sigma, x.size)
+    input_flux = corrected_flux * continuum
+    line7 = references["line7"].wavelength_air_angstrom
+    mask = (x >= line7+1.8) & (x <= line7+2.5)
+    line8 = references["line8"].wavelength_air_angstrom
+    keep = ~((x >= line8-5) & (x < line8-1.7))
+    line5 = references["line5"].wavelength_air_angstrom
+    return SyntheticContinuumCase(
+        name="continuum_review",
+        wavelength_air_angstrom=_read_only(x[keep]),
+        flux=_read_only(input_flux[keep]),
+        uncertainty=(
+            _read_only(noise_sigma * continuum[keep]) if noise_sigma else None
+        ),
+        mask=_read_only(mask[keep], dtype=bool),
+        truth=base.truth,
+        rv_kms=None,
+        description=(
+            "Entirely analytical Gaussian continuum exercise: prescribed constants/slopes, "
+            "an invented line4 blend, unity line5 with deliberately incorrect example anchors, "
+            "masked line7 continuum/wing pixels and incomplete line8 coverage."
+        ),
+        seed=base.seed,
+        continuum_truth=MappingProxyType(truth),
+        incorrect_anchor_example=((line5-3, 1.0), (line5+3, 1.08)),
+    )

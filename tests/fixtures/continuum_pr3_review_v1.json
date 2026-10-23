@@ -1,0 +1,440 @@
+{
+  "format": "sc-teff-review",
+  "schema_version": 1,
+  "software": {
+    "name": "sc-teff-method",
+    "version": "0.1.0",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1"
+  },
+  "calibration": {
+    "calibration_id": "2026-10-05-nine-line-v1",
+    "configuration": "nandakumar_feh",
+    "feh": -0.2,
+    "reference_temperature_k": null,
+    "validation_scope": "strict_strength_domain"
+  },
+  "input": {
+    "filename": "analytical.csv",
+    "sha256": "b22ba85a41bcfbdec022ddc0d188776eabaf77e278c890e3c4a25356746f0c0b",
+    "loader_settings": {
+      "wavelength_column": "wavelength",
+      "flux_column": "flux",
+      "uncertainty_column": null,
+      "mask_column": null,
+      "delimiter": ",",
+      "header": true,
+      "skiprows": 0
+    },
+    "wavelength_unit": "angstrom",
+    "wavelength_frame": "air",
+    "continuum_normalised": true,
+    "rv_kms": null,
+    "doppler_factor": 1.0,
+    "n_pixels": 2889,
+    "prepared_spectrum_sha256": "aca59c6364db794f60fa5d31bf7748871160a850f00009df7cd2aa265b747c11"
+  },
+  "fit_options": {
+    "window_half_width_angstrom": 3.0,
+    "centre_max_offset_angstrom": 1.0,
+    "amplitude_bounds": [
+      1e-06,
+      1.0
+    ],
+    "sigma_bounds_angstrom": [
+      0.03,
+      1.5
+    ],
+    "min_pixels": 7,
+    "max_nfev": 2000,
+    "rms_warning": 0.02,
+    "reduced_chi2_warning": 3.0,
+    "centre_warning_angstrom": 0.5,
+    "min_samples_per_fwhm": 4.0,
+    "gap_factor": 3.0,
+    "boundary_fraction": 0.01,
+    "max_jacobian_condition": 10000000000.0,
+    "min_amplitude_snr": 3.0
+  },
+  "lines": {
+    "line1": {
+      "controls": {
+        "window": null,
+        "initial": null,
+        "excluded_regions": [],
+        "numerically_excluded": false
+      },
+      "decision": {
+        "state": "accepted",
+        "note": "Inspected a purely analytical Gaussian in the public PR 3 review model.",
+        "controls_fingerprint": "3d67bda638816c654b961e9db8d1a63b38d097b49083d7eded36e5c1d2528533"
+      },
+      "fit": {
+        "status": "converged",
+        "parameters": {
+          "amplitude": 0.29999999999989235,
+          "centre_air_angstrom": 21730.507,
+          "sigma_angstrom": 0.34000000000022607
+        },
+        "area_angstrom": 0.2556760840124403,
+        "area_error_angstrom": 5.671280751170684e-14,
+        "parameter_errors": {
+          "amplitude": 6.6544519872567e-14,
+          "centre_air_angstrom": 8.708419197953668e-14,
+          "sigma_angstrom": 8.708419197953667e-14
+        },
+        "residual_rms": 2.6509622659571137e-13,
+        "n_pixels": 241,
+        "n_excluded": 0,
+        "centre_displacement_angstrom": 0.040000000000873115,
+        "flags": [],
+        "window": [
+          21727.467,
+          21733.467
+        ],
+        "window_provisional": true,
+        "reduced_chi2": null,
+        "weighting": "unweighted",
+        "fingerprint": "ba5882c2eb579ff7c50ad9fef888960b63d03e8c066e832fbce07c255c0b79be"
+      }
+    },
+    "line2": {
+      "controls": {
+        "window": null,
+        "initial": null,
+        "excluded_regions": [],
+        "numerically_excluded": false
+      },
+      "decision": {
+        "state": "pending",
+        "note": "",
+        "controls_fingerprint": null
+      },
+      "fit": {
+        "status": "converged",
+        "parameters": {
+          "amplitude": 0.3130000000000195,
+          "centre_air_angstrom": 21812.209000000003,
+          "sigma_angstrom": 0.356999999999946
+        },
+        "area_angstrom": 0.2800931500355177,
+        "area_error_angstrom": 6.187708119719585e-14,
+        "parameter_errors": {
+          "amplitude": 6.914673355013347e-14,
+          "centre_air_angstrom": 9.106781486684817e-14,
+          "sigma_angstrom": 9.106781486684816e-14
+        },
+        "residual_rms": 2.822653499502509e-13,
+        "n_pixels": 241,
+        "n_excluded": 0,
+        "centre_displacement_angstrom": 0.040000000000873115,
+        "flags": [],
+        "window": [
+          21809.169,
+          21815.169
+        ],
+        "window_provisional": true,
+        "reduced_chi2": null,
+        "weighting": "unweighted",
+        "fingerprint": "16e2568528f14a188a17c3a541c0b65ddc27811312e088651bebefc478402b1b"
+      }
+    },
+    "line3": {
+      "controls": {
+        "window": null,
+        "initial": null,
+        "excluded_regions": [],
+        "numerically_excluded": false
+      },
+      "decision": {
+        "state": "accepted",
+        "note": "Inspected a purely analytical Gaussian in the public PR 3 review model.",
+        "controls_fingerprint": "3d67bda638816c654b961e9db8d1a63b38d097b49083d7eded36e5c1d2528533"
+      },
+      "fit": {
+        "status": "converged",
+        "parameters": {
+          "amplitude": 0.3260000000001299,
+          "centre_air_angstrom": 21842.821,
+          "sigma_angstrom": 0.3739999999999868
+        },
+        "area_angstrom": 0.30561814575622104,
+        "area_error_angstrom": 6.202486188644555e-14,
+        "parameter_errors": {
+          "amplitude": 6.616133647744215e-14,
+          "centre_air_angstrom": 8.764509980992236e-14,
+          "sigma_angstrom": 8.764509980992237e-14
+        },
+        "residual_rms": 2.7643425722512124e-13,
+        "n_pixels": 241,
+        "n_excluded": 0,
+        "centre_displacement_angstrom": 0.040000000000873115,
+        "flags": [],
+        "window": [
+          21839.781,
+          21845.781
+        ],
+        "window_provisional": true,
+        "reduced_chi2": null,
+        "weighting": "unweighted",
+        "fingerprint": "f3a7aa803c32386b45f078be6ae842291e582885e2f323221e133ffe763bd7bc"
+      }
+    },
+    "line4": {
+      "controls": {
+        "window": null,
+        "initial": null,
+        "excluded_regions": [],
+        "numerically_excluded": false
+      },
+      "decision": {
+        "state": "pending",
+        "note": "",
+        "controls_fingerprint": null
+      },
+      "fit": {
+        "status": "converged",
+        "parameters": {
+          "amplitude": 0.3389999999999224,
+          "centre_air_angstrom": 22024.208000000002,
+          "sigma_angstrom": 0.33999999999998376
+        },
+        "area_angstrom": 0.28891397493388915,
+        "area_error_angstrom": 5.735299009905265e-14,
+        "parameter_errors": {
+          "amplitude": 6.729568428811162e-14,
+          "centre_air_angstrom": 7.793558518747162e-14,
+          "sigma_angstrom": 7.793558518747161e-14
+        },
+        "residual_rms": 2.680886721417733e-13,
+        "n_pixels": 241,
+        "n_excluded": 0,
+        "centre_displacement_angstrom": 0.040000000000873115,
+        "flags": [],
+        "window": [
+          22021.168,
+          22027.168
+        ],
+        "window_provisional": true,
+        "reduced_chi2": null,
+        "weighting": "unweighted",
+        "fingerprint": "6373b0bb89008be0039f2d686dee3a3b968091fa0db707b1aa7adcddb2330fe4"
+      }
+    },
+    "line5": {
+      "controls": {
+        "window": null,
+        "initial": null,
+        "excluded_regions": [],
+        "numerically_excluded": false
+      },
+      "decision": {
+        "state": "pending",
+        "note": "",
+        "controls_fingerprint": null
+      },
+      "fit": {
+        "status": "converged",
+        "parameters": {
+          "amplitude": 0.35199999999992065,
+          "centre_air_angstrom": 22052.024,
+          "sigma_angstrom": 0.35700000000007825
+        },
+        "area_angstrom": 0.31499293550322804,
+        "area_error_angstrom": 5.927746568032799e-14,
+        "parameter_errors": {
+          "amplitude": 6.62417012182704e-14,
+          "centre_air_angstrom": 7.757582419714322e-14,
+          "sigma_angstrom": 7.757582419714326e-14
+        },
+        "residual_rms": 2.7040665575507033e-13,
+        "n_pixels": 241,
+        "n_excluded": 0,
+        "centre_displacement_angstrom": 0.040000000000873115,
+        "flags": [],
+        "window": [
+          22048.984,
+          22054.984
+        ],
+        "window_provisional": true,
+        "reduced_chi2": null,
+        "weighting": "unweighted",
+        "fingerprint": "3f42ff60698b7d32d7466a21c4116810f062206bd49d5a9ca56d82f78c5cfa62"
+      }
+    },
+    "line6": {
+      "controls": {
+        "window": null,
+        "initial": null,
+        "excluded_regions": [],
+        "numerically_excluded": false
+      },
+      "decision": {
+        "state": "pending",
+        "note": "",
+        "controls_fingerprint": null
+      },
+      "fit": {
+        "status": "converged",
+        "parameters": {
+          "amplitude": 0.364999999999954,
+          "centre_air_angstrom": 22065.342,
+          "sigma_angstrom": 0.3740000000001289
+        },
+        "area_angstrom": 0.34217982576995265,
+        "area_error_angstrom": 6.316128436280299e-14,
+        "parameter_errors": {
+          "amplitude": 6.737354763842588e-14,
+          "centre_air_angstrom": 7.971453596510149e-14,
+          "sigma_angstrom": 7.971453596510147e-14
+        },
+        "residual_rms": 2.8149909886423073e-13,
+        "n_pixels": 241,
+        "n_excluded": 0,
+        "centre_displacement_angstrom": 0.040000000000873115,
+        "flags": [],
+        "window": [
+          22062.302,
+          22068.302
+        ],
+        "window_provisional": true,
+        "reduced_chi2": null,
+        "weighting": "unweighted",
+        "fingerprint": "6e6645a692f0d047aa1641f4708fe7ee7d741583b0fea5d790820780d6e00600"
+      }
+    },
+    "line7": {
+      "controls": {
+        "window": null,
+        "initial": null,
+        "excluded_regions": [],
+        "numerically_excluded": false
+      },
+      "decision": {
+        "state": "rejected",
+        "note": "Illustrative fixed subset decision, not a quality claim.",
+        "controls_fingerprint": null
+      },
+      "fit": {
+        "status": "converged",
+        "parameters": {
+          "amplitude": 0.3779999999999957,
+          "centre_air_angstrom": 22266.759000000002,
+          "sigma_angstrom": 0.3399999999999912
+        },
+        "area_angstrom": 0.3221518658555641,
+        "area_error_angstrom": 5.816150424202006e-14,
+        "parameter_errors": {
+          "amplitude": 6.824436215849907e-14,
+          "centre_air_angstrom": 7.087992747820255e-14,
+          "sigma_angstrom": 7.087992747820254e-14
+        },
+        "residual_rms": 2.718679604163943e-13,
+        "n_pixels": 241,
+        "n_excluded": 0,
+        "centre_displacement_angstrom": 0.040000000000873115,
+        "flags": [],
+        "window": [
+          22263.719,
+          22269.719
+        ],
+        "window_provisional": true,
+        "reduced_chi2": null,
+        "weighting": "unweighted",
+        "fingerprint": "b9f1697732d793a68bc701ca51dc13e19ff6215b3361d50d6123ea20436abc78"
+      }
+    },
+    "line8": {
+      "controls": {
+        "window": null,
+        "initial": null,
+        "excluded_regions": [],
+        "numerically_excluded": false
+      },
+      "decision": {
+        "state": "pending",
+        "note": "",
+        "controls_fingerprint": null
+      },
+      "fit": {
+        "status": "converged",
+        "parameters": {
+          "amplitude": 0.3910000000000458,
+          "centre_air_angstrom": 22394.743000000002,
+          "sigma_angstrom": 0.3569999999999489
+        },
+        "area_angstrom": 0.3498927209709084,
+        "area_error_angstrom": 6.007059277284234e-14,
+        "parameter_errors": {
+          "amplitude": 6.712800914808677e-14,
+          "centre_air_angstrom": 7.077250932068096e-14,
+          "sigma_angstrom": 7.077250932068096e-14
+        },
+        "residual_rms": 2.7402467218369215e-13,
+        "n_pixels": 241,
+        "n_excluded": 0,
+        "centre_displacement_angstrom": 0.040000000000873115,
+        "flags": [],
+        "window": [
+          22391.703,
+          22397.703
+        ],
+        "window_provisional": true,
+        "reduced_chi2": null,
+        "weighting": "unweighted",
+        "fingerprint": "9eb656166417eb3b70ac0dfe9b88612383652d266508f3d68eabce09df5cc4f5"
+      }
+    },
+    "line9": {
+      "controls": {
+        "window": null,
+        "initial": null,
+        "excluded_regions": [],
+        "numerically_excluded": false
+      },
+      "decision": {
+        "state": "accepted",
+        "note": "Inspected a purely analytical Gaussian in the public PR 3 review model.",
+        "controls_fingerprint": "3d67bda638816c654b961e9db8d1a63b38d097b49083d7eded36e5c1d2528533"
+      },
+      "fit": {
+        "status": "converged",
+        "parameters": {
+          "amplitude": 0.4039999999999219,
+          "centre_air_angstrom": 22656.816000000003,
+          "sigma_angstrom": 0.3740000000000062
+        },
+        "area_angstrom": 0.3787415057835787,
+        "area_error_angstrom": 6.176711202892867e-14,
+        "parameter_errors": {
+          "amplitude": 6.588639713002986e-14,
+          "centre_air_angstrom": 7.042962322026249e-14,
+          "sigma_angstrom": 7.042962322026249e-14
+        },
+        "residual_rms": 2.752855099607832e-13,
+        "n_pixels": 241,
+        "n_excluded": 0,
+        "centre_displacement_angstrom": 0.040000000000873115,
+        "flags": [],
+        "window": [
+          22653.776,
+          22659.776
+        ],
+        "window_provisional": true,
+        "reduced_chi2": null,
+        "weighting": "unweighted",
+        "fingerprint": "57df8e30e51d7bfc860b6940327c43b66e938c7f2f8d7d6f2c9101110c5a47ab"
+      }
+    }
+  },
+  "notes": "Frozen public-main PR 3 schema-1 regression fixture; generated from mathematical profiles only, no spectrum arrays embedded.",
+  "scientific_warnings": [
+    "Only explicitly accepted valid Gaussian measurements contribute to reviewed Teff.",
+    "Numerical convergence is not scientific acceptance; formal fit errors exclude continuum and profile systematics.",
+    "Manual line selection can introduce selection effects. Frozen exact-subset bias and RMSE do not validate an arbitrary post-hoc line-selection procedure.",
+    "Analytical synthetic tests establish software correctness, not instrument transfer accuracy.",
+    "Default symmetric fitting windows are provisional and may need adjustment.",
+    "line5: area 0.314993 Angstrom is outside the empirical training strength range [0.484535, 1.1814] Angstrom",
+    "line5: estimated line temperature (applicability proxy) 3996.97 K is outside empirical reference-temperature coverage [3347, 3800] K"
+  ]
+}

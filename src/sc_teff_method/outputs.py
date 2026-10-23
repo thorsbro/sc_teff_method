@@ -35,7 +35,7 @@ def summary_dict(result: SpectralEstimate, *, input_metadata: dict | None = None
     """Create a numerical summary without embedding input wavelength/flux arrays."""
     calibration = get_calibration(result.configuration)
     spectrum = result.spectrum
-    return {
+    summary = {
         "schema_version": 1,
         "software": {
             "name": "sc-teff-method", "version": __version__,
@@ -81,6 +81,16 @@ def summary_dict(result: SpectralEstimate, *, input_metadata: dict | None = None
             "calibration uncertainty; they are not total temperature uncertainties."
         ),
     }
+    if result.continuum_corrections is not None:
+        summary["schema_version"] = 2
+        summary["continuum_note"] = (
+            "Entirely manual local continuum division, starting from the original input. "
+            "Formal Gaussian covariance excludes continuum-placement uncertainty. Frozen "
+            "calibration RMSE does not validate these corrections or post-hoc selection."
+        )
+        for line, correction in result.continuum_corrections.items():
+            summary["fits"][line]["continuum"] = _plain(correction)
+    return summary
 
 
 def _write_lines(result: SpectralEstimate, path: Path) -> None:
@@ -111,6 +121,14 @@ def _write_lines(result: SpectralEstimate, path: Path) -> None:
                                               if w.line_id == line_id),
             "message": fit.message,
         })
+        if result.continuum_corrections is not None:
+            correction = result.continuum_corrections[line_id]
+            rows[-1].update({
+                "continuum_enabled": correction.enabled,
+                "continuum_mode": correction.mode,
+                "continuum_constant_level": correction.level,
+                "continuum_anchors": json.dumps(correction.anchors, allow_nan=False),
+            })
     with path.open("w", encoding="utf-8", newline="") as stream:
         writer = csv.DictWriter(stream, fieldnames=list(rows[0]), lineterminator="\n")
         writer.writeheader()

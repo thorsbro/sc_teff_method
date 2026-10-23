@@ -223,6 +223,7 @@ def test_browser_review_masks_approval_save_restore_export_and_offline_assets(lo
 
             select_line(page, "line5")
             canvas = page.locator(".selected_profile canvas").first
+            canvas.scroll_into_view_if_needed()
             rectangle = canvas.bounding_box()
             assert rectangle is not None
             page.mouse.move(

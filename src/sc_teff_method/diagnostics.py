@@ -9,12 +9,21 @@ from .fitting import gaussian_absorption
 from .workflow import SpectralEstimate
 
 
-def plot_diagnostics(result: SpectralEstimate, *, spectrum_label: str = "Input spectrum"):
+def plot_diagnostics(
+    result: SpectralEstimate,
+    *,
+    spectrum_label: str = "Input spectrum",
+    line_spectra=None,
+    continuum_corrections=None,
+):
     """Return a headless Matplotlib Figure with profiles, masks and residuals.
 
     The caller owns the input spectrum and output figure. Repository example
     figures must be generated entirely from analytic synthetic spectra.
     Excluded nonfinite pixels are marked at continuum unity in profile panels.
+    Optional review-only working spectra supply the actual corrected fit pixels;
+    the immutable input remains a separate grey reference. No correction or
+    numerical fitting is performed by this plotting function.
     """
     from matplotlib.backends.backend_agg import FigureCanvasAgg
     from matplotlib.figure import Figure
@@ -28,14 +37,27 @@ def plot_diagnostics(result: SpectralEstimate, *, spectrum_label: str = "Input s
         3, 3, left=0.065, right=0.99, bottom=0.07, top=0.90,
         hspace=0.50, wspace=0.25,
     )
-    spectrum = result.spectrum
-    wavelength, flux = spectrum.wavelength_air_angstrom, spectrum.flux
+    original = result.spectrum
+    if continuum_corrections is None:
+        continuum_corrections = result.continuum_corrections
+    has_continuum = bool(continuum_corrections) and any(
+        control.active for control in continuum_corrections.values()
+    )
     for index, line_id in enumerate(LINE_IDS):
+        fit = result.fits[line_id]
+        correction = (continuum_corrections or {}).get(line_id)
+        spectrum = original if line_spectra is None else line_spectra.get(line_id, original)
+        if line_spectra is None and correction is not None and correction.active:
+            from .continuum import apply_continuum
+
+            spectrum, _ = apply_continuum(
+                original, correction, window=fit.window, excluded_regions=fit.excluded_regions,
+            )
+        wavelength, flux = spectrum.wavelength_air_angstrom, spectrum.flux
         row, col = divmod(index, 3)
         pair = grid[row, col].subgridspec(2, 1, height_ratios=[3, 1], hspace=0.20)
         profile = figure.add_subplot(pair[0])
         residual = figure.add_subplot(pair[1], sharex=profile)
-        fit = result.fits[line_id]
         lower, upper = fit.window
         padding = 0.12 * (upper - lower)
         region = (wavelength >= lower - padding) & (wavelength <= upper + padding)
@@ -45,16 +67,25 @@ def plot_diagnostics(result: SpectralEstimate, *, spectrum_label: str = "Input s
             excluded |= (wavelength >= start) & (wavelength <= stop)
         used = region & in_window & ~excluded & np.isfinite(flux)
         removed = region & excluded
+        if spectrum is not original:
+            removed &= in_window
         if fit.status == "excluded":
             used[:] = False
             removed |= region & in_window
-        finite = region & np.isfinite(flux)
-        profile.plot(wavelength[finite], flux[finite], ".", color="0.65", ms=2)
+        original_finite = region & np.isfinite(original.flux)
+        profile.plot(wavelength[original_finite], original.flux[original_finite],
+                     ".", color="0.65", ms=2, label="Original input")
         profile.plot(wavelength[used], flux[used], ".", color="#176b9b", ms=3)
         profile.plot(
             wavelength[removed], np.where(np.isfinite(flux[removed]), flux[removed], 1.0),
             "x", color="#bf3c39", ms=4,
         )
+        if correction is not None and correction.active:
+            from .continuum import evaluate_continuum
+
+            x_continuum = np.linspace(lower, upper, 100)
+            profile.plot(x_continuum, evaluate_continuum(x_continuum, correction),
+                         color="#13826a", ls="-.", lw=1, label="Manual continuum C")
         if fit.parameters is not None:
             x_model = np.linspace(lower, upper, 400)
             profile.plot(x_model, gaussian_absorption(x_model, fit.parameters),
@@ -78,7 +109,7 @@ def plot_diagnostics(result: SpectralEstimate, *, spectrum_label: str = "Input s
             axis.tick_params(labelsize=7)
             axis.ticklabel_format(axis="x", style="plain", useOffset=False)
         residual.axhline(0, color="0.5", lw=0.6)
-        residual.set_ylabel("F−model", fontsize=7)
+        residual.set_ylabel("Fc−model" if has_continuum else "F−model", fontsize=7)
         residual.set_xlabel("Rest air wavelength (Å)", fontsize=8)
         profile.set_ylabel("Normalised flux", fontsize=8)
         profile.tick_params(labelbottom=False)
@@ -91,21 +122,31 @@ def plot_diagnostics(result: SpectralEstimate, *, spectrum_label: str = "Input s
         profile.text(0.02, 0.03, flags.replace(", ", "\n"), transform=profile.transAxes,
                      fontsize=6.3, va="bottom", color="#8e2927" if fit.flags else "0.3")
     handles = [
-        Line2D([], [], color="#176b9b", marker=".", ls="", label="Fit pixels"),
+        Line2D([], [], color="#176b9b", marker=".", ls="",
+               label="Corrected fit pixels" if has_continuum else "Fit pixels"),
         Line2D([], [], color="#bf3c39", marker="x", ls="", label="Excluded pixels"),
         Line2D([], [], color="#e38a17", label="Gaussian / fitted centre"),
         Line2D([], [], color="0.3", ls="--", label="Rest wavelength"),
         Line2D([], [], color="#8662a1", ls=":", label="Fitting window"),
     ]
+    if has_continuum:
+        handles.extend([
+            Line2D([], [], color="0.65", marker=".", ls="", label="Original input"),
+            Line2D([], [], color="#13826a", ls="-.", label="Manual continuum C"),
+        ])
     figure.legend(handles=handles, loc="upper center", bbox_to_anchor=(0.5, 0.949),
-                  ncol=5, fontsize=8, frameon=False)
+                  ncol=4 if has_continuum else 5, fontsize=8, frameon=False)
     temperature = ("No combined temperature" if result.temperature is None else
                    f"Teff = {result.temperature.temperature_k:.2f} K, "
                    f"{result.temperature.n_lines} lines")
     figure.suptitle(f"Sc I Gaussian fits — {spectrum_label}\n{temperature}", y=0.992, fontsize=13)
     figure.text(
         0.5, 0.015,
-        "Continuum fixed at unity. Inspect all fits; convergence is not scientific acceptance. "
-        "Default windows are provisional.", ha="center", fontsize=8,
+        ("Gaussian model continuum fixed at unity after manual flux division. "
+         "Formal errors exclude continuum placement."
+         if has_continuum else
+         "Continuum fixed at unity. Inspect all fits; convergence is not scientific acceptance. "
+         "Default windows are provisional."),
+        ha="center", fontsize=8,
     )
     return figure

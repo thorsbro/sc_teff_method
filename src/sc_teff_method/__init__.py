@@ -24,6 +24,8 @@ _SPECTRAL_EXPORTS = {
     "write_fit_outputs": "outputs",
     "ReviewSession": "review", "read_review": "review",
     "write_review_outputs": "review_exports",
+    "ContinuumCorrection": "continuum", "ContinuumOptions": "continuum",
+    "evaluate_continuum": "continuum", "apply_continuum": "continuum",
 }
 
 

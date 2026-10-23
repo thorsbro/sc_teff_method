@@ -225,7 +225,7 @@ def test_malformed_or_unknown_review_records_are_rejected(change):
     review = session()
     payload = review.to_dict()
     if change == "schema":
-        payload["schema_version"] = 2
+        payload["schema_version"] = 999
     elif change == "calibration":
         payload["calibration"]["calibration_id"] = "other"
     elif change == "line":

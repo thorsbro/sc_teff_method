@@ -52,3 +52,8 @@ jobs:
         run: |
           python -I "$GITHUB_WORKSPACE/examples/demo_interactive_review.py" --output-dir review-demo --scripted-review
           sc-teff replay review-demo/spectrum.csv --review-file review-demo/review.json --output-dir reviewed-results --label "Analytical synthetic review"
+      - name: Reproduce manual analytical continuum corrections
+        working-directory: ${{ runner.temp }}
+        run: |
+          python -I "$GITHUB_WORKSPACE/examples/demo_continuum_review.py" --output-dir continuum-demo --scripted-review
+          sc-teff replay continuum-demo/spectrum.csv --review-file continuum-demo/review.json --output-dir continuum-results --label "Analytical manual continuum review"

@@ -8,6 +8,7 @@ from types import MappingProxyType
 
 from ._data import LINE_IDS, SCOPES, get_calibration
 from .api import _finite_real, estimate_temperature, subset_performance
+from .continuum import ContinuumCorrection
 from .fitting import FitOptions, GaussianParameters, LineFit, fit_gaussian_lines
 from .models import ApplicabilityWarning, SubsetPerformance, TemperatureEstimate
 from .spectrum import Spectrum, prepare_spectrum
@@ -23,6 +24,9 @@ class SpectralEstimate:
     ``line_temperatures_k`` includes all converged positive-area fits for
     diagnostics, including quality-flagged fits omitted from ``temperature``.
     Missing/failed/user-excluded lines have no area or diagnostic temperature.
+    ``continuum_corrections`` optionally records manually chosen per-line
+    preprocessing over the original ``spectrum`` so downstream plots/exports
+    can reconstruct the corrected flux actually fitted. PR 2 results use None.
     """
 
     spectrum: Spectrum
@@ -42,6 +46,7 @@ class SpectralEstimate:
     initial_parameters: Mapping[str, GaussianParameters]
     target_passes_declared_strength_cut: bool | None
     warnings: tuple[str, ...]
+    continuum_corrections: Mapping[str, ContinuumCorrection] | None = None
 
 
 def estimate_from_spectrum(
