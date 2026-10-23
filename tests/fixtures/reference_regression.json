@@ -1,0 +1,831 @@
+{
+  "source_snapshot": "2026-10-05-nine-line-v1",
+  "reference_implementation_sha256": "0ddc1863e05c43defd24f10583184696b005a658354a9cef2e3106dd94f75d81",
+  "note": "Illustrative areas and approved frozen aggregate range boundaries, with predictions from the private fixed-coefficient estimator. No individual-star measurements or spectral data.",
+  "cases": [
+    {
+      "id": "nandakumar_feh_line1_minimum",
+      "configuration": "nandakumar_feh",
+      "areas": {
+        "line1": 0.10161381736795086
+      },
+      "feh": -0.2,
+      "temperature_k": 3766.404606497463,
+      "line_temperatures_k": {
+        "line1": 3766.404606497463
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_feh_line1_midpoint",
+      "configuration": "nandakumar_feh",
+      "areas": {
+        "line1": 0.46398847233832086
+      },
+      "feh": -0.2,
+      "temperature_k": 3511.4449858186035,
+      "line_temperatures_k": {
+        "line1": 3511.4449858186035
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_feh_line1_maximum",
+      "configuration": "nandakumar_feh",
+      "areas": {
+        "line1": 0.8263631273086909
+      },
+      "feh": -0.2,
+      "temperature_k": 3256.485365139744,
+      "line_temperatures_k": {
+        "line1": 3256.485365139744
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_feh_line2_minimum",
+      "configuration": "nandakumar_feh",
+      "areas": {
+        "line2": 0.09111906043197379
+      },
+      "feh": -0.2,
+      "temperature_k": 3843.5365491607545,
+      "line_temperatures_k": {
+        "line2": 3843.5365491607545
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_feh_line2_midpoint",
+      "configuration": "nandakumar_feh",
+      "areas": {
+        "line2": 0.37851610764301574
+      },
+      "feh": -0.2,
+      "temperature_k": 3565.5226626338194,
+      "line_temperatures_k": {
+        "line2": 3565.5226626338194
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_feh_line2_maximum",
+      "configuration": "nandakumar_feh",
+      "areas": {
+        "line2": 0.6659131548540577
+      },
+      "feh": -0.2,
+      "temperature_k": 3287.5087761068844,
+      "line_temperatures_k": {
+        "line2": 3287.5087761068844
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_feh_line3_minimum",
+      "configuration": "nandakumar_feh",
+      "areas": {
+        "line3": 0.10716645249835126
+      },
+      "feh": -0.2,
+      "temperature_k": 3746.1935208912582,
+      "line_temperatures_k": {
+        "line3": 3746.1935208912582
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_feh_line3_midpoint",
+      "configuration": "nandakumar_feh",
+      "areas": {
+        "line3": 0.33738429606741244
+      },
+      "feh": -0.2,
+      "temperature_k": 3520.5772783993425,
+      "line_temperatures_k": {
+        "line3": 3520.5772783993425
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_feh_line3_maximum",
+      "configuration": "nandakumar_feh",
+      "areas": {
+        "line3": 0.5676021396364737
+      },
+      "feh": -0.2,
+      "temperature_k": 3294.9610359074263,
+      "line_temperatures_k": {
+        "line3": 3294.9610359074263
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_feh_line4_minimum",
+      "configuration": "nandakumar_feh",
+      "areas": {
+        "line4": 0.16727295500453188
+      },
+      "feh": -0.2,
+      "temperature_k": 3824.620845904671,
+      "line_temperatures_k": {
+        "line4": 3824.620845904671
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_feh_line4_midpoint",
+      "configuration": "nandakumar_feh",
+      "areas": {
+        "line4": 0.6379309697457911
+      },
+      "feh": -0.2,
+      "temperature_k": 3547.608218502942,
+      "line_temperatures_k": {
+        "line4": 3547.608218502942
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_feh_line4_maximum",
+      "configuration": "nandakumar_feh",
+      "areas": {
+        "line4": 1.1085889844870502
+      },
+      "feh": -0.2,
+      "temperature_k": 3270.5955911012134,
+      "line_temperatures_k": {
+        "line4": 3270.5955911012134
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_feh_line5_minimum",
+      "configuration": "nandakumar_feh",
+      "areas": {
+        "line5": 0.4845349917533922
+      },
+      "feh": -0.2,
+      "temperature_k": 3858.1443886355883,
+      "line_temperatures_k": {
+        "line5": 3858.1443886355883
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_feh_line5_midpoint",
+      "configuration": "nandakumar_feh",
+      "areas": {
+        "line5": 0.8329681434096683
+      },
+      "feh": -0.2,
+      "temperature_k": 3572.8309428189846,
+      "line_temperatures_k": {
+        "line5": 3572.8309428189846
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_feh_line5_maximum",
+      "configuration": "nandakumar_feh",
+      "areas": {
+        "line5": 1.1814012950659443
+      },
+      "feh": -0.2,
+      "temperature_k": 3287.5174970023813,
+      "line_temperatures_k": {
+        "line5": 3287.5174970023813
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_feh_line6_minimum",
+      "configuration": "nandakumar_feh",
+      "areas": {
+        "line6": 0.28070590261590356
+      },
+      "feh": -0.2,
+      "temperature_k": 3826.569787901666,
+      "line_temperatures_k": {
+        "line6": 3826.569787901666
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_feh_line6_midpoint",
+      "configuration": "nandakumar_feh",
+      "areas": {
+        "line6": 0.5290943764274476
+      },
+      "feh": -0.2,
+      "temperature_k": 3563.756883308082,
+      "line_temperatures_k": {
+        "line6": 3563.756883308082
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_feh_line6_maximum",
+      "configuration": "nandakumar_feh",
+      "areas": {
+        "line6": 0.7774828502389918
+      },
+      "feh": -0.2,
+      "temperature_k": 3300.9439787144975,
+      "line_temperatures_k": {
+        "line6": 3300.9439787144975
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_feh_line7_minimum",
+      "configuration": "nandakumar_feh",
+      "areas": {
+        "line7": 0.20959261390258738
+      },
+      "feh": -0.2,
+      "temperature_k": 3859.380734208088,
+      "line_temperatures_k": {
+        "line7": 3859.380734208088
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_feh_line7_midpoint",
+      "configuration": "nandakumar_feh",
+      "areas": {
+        "line7": 0.44757338092353405
+      },
+      "feh": -0.2,
+      "temperature_k": 3571.6548475716813,
+      "line_temperatures_k": {
+        "line7": 3571.6548475716813
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_feh_line7_maximum",
+      "configuration": "nandakumar_feh",
+      "areas": {
+        "line7": 0.6855541479444808
+      },
+      "feh": -0.2,
+      "temperature_k": 3283.928960935274,
+      "line_temperatures_k": {
+        "line7": 3283.928960935274
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_feh_line8_minimum",
+      "configuration": "nandakumar_feh",
+      "areas": {
+        "line8": 0.20857203837314284
+      },
+      "feh": -0.2,
+      "temperature_k": 3830.067948747962,
+      "line_temperatures_k": {
+        "line8": 3830.067948747962
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_feh_line8_midpoint",
+      "configuration": "nandakumar_feh",
+      "areas": {
+        "line8": 0.4307043671263449
+      },
+      "feh": -0.2,
+      "temperature_k": 3585.4812687028248,
+      "line_temperatures_k": {
+        "line8": 3585.4812687028248
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_feh_line8_maximum",
+      "configuration": "nandakumar_feh",
+      "areas": {
+        "line8": 0.652836695879547
+      },
+      "feh": -0.2,
+      "temperature_k": 3340.894588657688,
+      "line_temperatures_k": {
+        "line8": 3340.894588657688
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_feh_line9_minimum",
+      "configuration": "nandakumar_feh",
+      "areas": {
+        "line9": 0.1466484159827285
+      },
+      "feh": -0.2,
+      "temperature_k": 3815.5034973846195,
+      "line_temperatures_k": {
+        "line9": 3815.5034973846195
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_feh_line9_midpoint",
+      "configuration": "nandakumar_feh",
+      "areas": {
+        "line9": 0.6793010990246466
+      },
+      "feh": -0.2,
+      "temperature_k": 3537.40779915667,
+      "line_temperatures_k": {
+        "line9": 3537.40779915667
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_feh_line9_maximum",
+      "configuration": "nandakumar_feh",
+      "areas": {
+        "line9": 1.2119537820665647
+      },
+      "feh": -0.2,
+      "temperature_k": 3259.31210092872,
+      "line_temperatures_k": {
+        "line9": 3259.31210092872
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_feh_two_lines",
+      "configuration": "nandakumar_feh",
+      "areas": {
+        "line1": 0.3,
+        "line2": 0.27
+      },
+      "feh": -0.2,
+      "temperature_k": 3648.659937687841,
+      "line_temperatures_k": {
+        "line1": 3626.8240227617434,
+        "line2": 3670.4958526139385
+      },
+      "line_scatter_k": 30.880647035312226
+    },
+    {
+      "id": "nandakumar_feh_three_lines",
+      "configuration": "nandakumar_feh",
+      "areas": {
+        "line4": 0.65,
+        "line5": 0.8,
+        "line6": 0.5
+      },
+      "feh": -0.1,
+      "temperature_k": 3591.943094114415,
+      "line_temperatures_k": {
+        "line4": 3556.7482005656825,
+        "line5": 3614.494737580542,
+        "line6": 3604.586344197022
+      },
+      "line_scatter_k": 30.8796771969952
+    },
+    {
+      "id": "nandakumar_feh_all_nine",
+      "configuration": "nandakumar_feh",
+      "areas": {
+        "line1": 0.4,
+        "line2": 0.35,
+        "line3": 0.3,
+        "line4": 0.65,
+        "line5": 0.8,
+        "line6": 0.5,
+        "line7": 0.4,
+        "line8": 0.4,
+        "line9": 0.65
+      },
+      "feh": -0.1,
+      "temperature_k": 3596.9119166650817,
+      "line_temperatures_k": {
+        "line1": 3571.1983294677066,
+        "line2": 3607.774438661583,
+        "line3": 3575.7640699900608,
+        "line4": 3556.7482005656825,
+        "line5": 3614.494737580542,
+        "line6": 3604.586344197022,
+        "line7": 3642.8216401970785,
+        "line8": 3630.8906517115415,
+        "line9": 3567.928837614517
+      },
+      "line_scatter_k": 30.22802282499254
+    },
+    {
+      "id": "nandakumar_no_feh_line1_minimum",
+      "configuration": "nandakumar_no_feh",
+      "areas": {
+        "line1": 0.10161381736795086
+      },
+      "feh": null,
+      "temperature_k": 3707.5642043116572,
+      "line_temperatures_k": {
+        "line1": 3707.5642043116572
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_no_feh_line1_midpoint",
+      "configuration": "nandakumar_no_feh",
+      "areas": {
+        "line1": 0.46398847233832086
+      },
+      "feh": null,
+      "temperature_k": 3524.358095936679,
+      "line_temperatures_k": {
+        "line1": 3524.358095936679
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_no_feh_line1_maximum",
+      "configuration": "nandakumar_no_feh",
+      "areas": {
+        "line1": 0.8263631273086909
+      },
+      "feh": null,
+      "temperature_k": 3341.151987561701,
+      "line_temperatures_k": {
+        "line1": 3341.151987561701
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_no_feh_line2_minimum",
+      "configuration": "nandakumar_no_feh",
+      "areas": {
+        "line2": 0.09111906043197379
+      },
+      "feh": null,
+      "temperature_k": 3764.9533243960577,
+      "line_temperatures_k": {
+        "line2": 3764.9533243960577
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_no_feh_line2_midpoint",
+      "configuration": "nandakumar_no_feh",
+      "areas": {
+        "line2": 0.37851610764301574
+      },
+      "feh": null,
+      "temperature_k": 3563.3821527346813,
+      "line_temperatures_k": {
+        "line2": 3563.3821527346813
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_no_feh_line2_maximum",
+      "configuration": "nandakumar_no_feh",
+      "areas": {
+        "line2": 0.6659131548540577
+      },
+      "feh": null,
+      "temperature_k": 3361.8109810733044,
+      "line_temperatures_k": {
+        "line2": 3361.8109810733044
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_no_feh_line3_minimum",
+      "configuration": "nandakumar_no_feh",
+      "areas": {
+        "line3": 0.10716645249835126
+      },
+      "feh": null,
+      "temperature_k": 3680.83786451031,
+      "line_temperatures_k": {
+        "line3": 3680.83786451031
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_no_feh_line3_midpoint",
+      "configuration": "nandakumar_no_feh",
+      "areas": {
+        "line3": 0.33738429606741244
+      },
+      "feh": null,
+      "temperature_k": 3533.0157641888504,
+      "line_temperatures_k": {
+        "line3": 3533.0157641888504
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_no_feh_line3_maximum",
+      "configuration": "nandakumar_no_feh",
+      "areas": {
+        "line3": 0.5676021396364737
+      },
+      "feh": null,
+      "temperature_k": 3385.1936638673906,
+      "line_temperatures_k": {
+        "line3": 3385.1936638673906
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_no_feh_line4_minimum",
+      "configuration": "nandakumar_no_feh",
+      "areas": {
+        "line4": 0.16727295500453188
+      },
+      "feh": null,
+      "temperature_k": 3744.5889671744817,
+      "line_temperatures_k": {
+        "line4": 3744.5889671744817
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_no_feh_line4_midpoint",
+      "configuration": "nandakumar_no_feh",
+      "areas": {
+        "line4": 0.6379309697457911
+      },
+      "feh": null,
+      "temperature_k": 3550.5622070605828,
+      "line_temperatures_k": {
+        "line4": 3550.5622070605828
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_no_feh_line4_maximum",
+      "configuration": "nandakumar_no_feh",
+      "areas": {
+        "line4": 1.1085889844870502
+      },
+      "feh": null,
+      "temperature_k": 3356.5354469466843,
+      "line_temperatures_k": {
+        "line4": 3356.5354469466843
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_no_feh_line5_minimum",
+      "configuration": "nandakumar_no_feh",
+      "areas": {
+        "line5": 0.4845349917533922
+      },
+      "feh": null,
+      "temperature_k": 3774.0941801982854,
+      "line_temperatures_k": {
+        "line5": 3774.0941801982854
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_no_feh_line5_midpoint",
+      "configuration": "nandakumar_no_feh",
+      "areas": {
+        "line5": 0.8329681434096683
+      },
+      "feh": null,
+      "temperature_k": 3568.5199463823596,
+      "line_temperatures_k": {
+        "line5": 3568.5199463823596
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_no_feh_line5_maximum",
+      "configuration": "nandakumar_no_feh",
+      "areas": {
+        "line5": 1.1814012950659443
+      },
+      "feh": null,
+      "temperature_k": 3362.945712566434,
+      "line_temperatures_k": {
+        "line5": 3362.945712566434
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_no_feh_line6_minimum",
+      "configuration": "nandakumar_no_feh",
+      "areas": {
+        "line6": 0.28070590261590356
+      },
+      "feh": null,
+      "temperature_k": 3774.5794783476326,
+      "line_temperatures_k": {
+        "line6": 3774.5794783476326
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_no_feh_line6_midpoint",
+      "configuration": "nandakumar_no_feh",
+      "areas": {
+        "line6": 0.5290943764274476
+      },
+      "feh": null,
+      "temperature_k": 3562.81290008811,
+      "line_temperatures_k": {
+        "line6": 3562.81290008811
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_no_feh_line6_maximum",
+      "configuration": "nandakumar_no_feh",
+      "areas": {
+        "line6": 0.7774828502389918
+      },
+      "feh": null,
+      "temperature_k": 3351.046321828587,
+      "line_temperatures_k": {
+        "line6": 3351.046321828587
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_no_feh_line7_minimum",
+      "configuration": "nandakumar_no_feh",
+      "areas": {
+        "line7": 0.20959261390258738
+      },
+      "feh": null,
+      "temperature_k": 3780.653257628211,
+      "line_temperatures_k": {
+        "line7": 3780.653257628211
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_no_feh_line7_midpoint",
+      "configuration": "nandakumar_no_feh",
+      "areas": {
+        "line7": 0.44757338092353405
+      },
+      "feh": null,
+      "temperature_k": 3568.020126916996,
+      "line_temperatures_k": {
+        "line7": 3568.020126916996
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_no_feh_line7_maximum",
+      "configuration": "nandakumar_no_feh",
+      "areas": {
+        "line7": 0.6855541479444808
+      },
+      "feh": null,
+      "temperature_k": 3355.3869962057806,
+      "line_temperatures_k": {
+        "line7": 3355.3869962057806
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_no_feh_line8_minimum",
+      "configuration": "nandakumar_no_feh",
+      "areas": {
+        "line8": 0.20857203837314284
+      },
+      "feh": null,
+      "temperature_k": 3768.174096650941,
+      "line_temperatures_k": {
+        "line8": 3768.174096650941
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_no_feh_line8_midpoint",
+      "configuration": "nandakumar_no_feh",
+      "areas": {
+        "line8": 0.4307043671263449
+      },
+      "feh": null,
+      "temperature_k": 3579.23251051685,
+      "line_temperatures_k": {
+        "line8": 3579.23251051685
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_no_feh_line8_maximum",
+      "configuration": "nandakumar_no_feh",
+      "areas": {
+        "line8": 0.652836695879547
+      },
+      "feh": null,
+      "temperature_k": 3390.290924382759,
+      "line_temperatures_k": {
+        "line8": 3390.290924382759
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_no_feh_line9_minimum",
+      "configuration": "nandakumar_no_feh",
+      "areas": {
+        "line9": 0.1466484159827285
+      },
+      "feh": null,
+      "temperature_k": 3740.2719470051074,
+      "line_temperatures_k": {
+        "line9": 3740.2719470051074
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_no_feh_line9_midpoint",
+      "configuration": "nandakumar_no_feh",
+      "areas": {
+        "line9": 0.6793010990246466
+      },
+      "feh": null,
+      "temperature_k": 3543.1456099215584,
+      "line_temperatures_k": {
+        "line9": 3543.1456099215584
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_no_feh_line9_maximum",
+      "configuration": "nandakumar_no_feh",
+      "areas": {
+        "line9": 1.2119537820665647
+      },
+      "feh": null,
+      "temperature_k": 3346.01927283801,
+      "line_temperatures_k": {
+        "line9": 3346.01927283801
+      },
+      "line_scatter_k": null
+    },
+    {
+      "id": "nandakumar_no_feh_two_lines",
+      "configuration": "nandakumar_no_feh",
+      "areas": {
+        "line1": 0.3,
+        "line2": 0.27
+      },
+      "feh": null,
+      "temperature_k": 3623.3789081217,
+      "line_temperatures_k": {
+        "line1": 3607.265908123263,
+        "line2": 3639.491908120137
+      },
+      "line_scatter_k": 22.78722312830707
+    },
+    {
+      "id": "nandakumar_no_feh_three_lines",
+      "configuration": "nandakumar_no_feh",
+      "areas": {
+        "line4": 0.65,
+        "line5": 0.8,
+        "line6": 0.5
+      },
+      "feh": null,
+      "temperature_k": 3573.725162231238,
+      "line_temperatures_k": {
+        "line4": 3545.586800789794,
+        "line5": 3587.9710255622817,
+        "line6": 3587.617660341638
+      },
+      "line_scatter_k": 24.369176334086387
+    },
+    {
+      "id": "nandakumar_no_feh_all_nine",
+      "configuration": "nandakumar_no_feh",
+      "areas": {
+        "line1": 0.4,
+        "line2": 0.35,
+        "line3": 0.3,
+        "line4": 0.65,
+        "line5": 0.8,
+        "line6": 0.5,
+        "line7": 0.4,
+        "line8": 0.4,
+        "line9": 0.65
+      },
+      "feh": null,
+      "temperature_k": 3576.4613106212796,
+      "line_temperatures_k": {
+        "line1": 3556.7088104173104,
+        "line2": 3583.382446003539,
+        "line3": 3557.0200945137776,
+        "line4": 3545.586800789794,
+        "line5": 3587.9710255622817,
+        "line6": 3587.617660341638,
+        "line7": 3610.5264061046664,
+        "line8": 3605.3490684202275,
+        "line9": 3553.9894834382835
+      },
+      "line_scatter_k": 23.78579827163657
+    }
+  ]
+}

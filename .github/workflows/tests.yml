@@ -1,0 +1,39 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.14"]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install test and build tools
+        run: python -m pip install pytest build ruff
+      - name: Lint
+        run: python -m ruff check .
+      - name: Build sdist and wheel
+        run: python -m build
+      - name: Install wheel without runtime dependencies
+        run: python -m pip install --no-deps dist/*.whl
+      - name: Test installed wheel outside the source tree
+        working-directory: ${{ runner.temp }}
+        run: python -m pytest "$GITHUB_WORKSPACE/tests" -q
+      - name: Run measured-area example in isolated Python
+        working-directory: ${{ runner.temp }}
+        run: python -I "$GITHUB_WORKSPACE/examples/use_measured_areas.py"

@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "calibration_id": "2026-10-05-nine-line-v1",
+  "source_repository": "https://github.com/thorsbro/scteff_paper",
+  "source_visibility": "private",
+  "snapshot_git_revision": "1b748b220ec03aa9b6417ad3737f7542436672de",
+  "reference_git_revision": "ad70e2e8c9c6ac458168e862d609233e2c564af3",
+  "source_sha256": {
+    "results/publication/2026-10-05-nine-line-v1/coefficients_all_methods.csv": "bfc0b011807f171e1bf8d14a47b559afd306d8ae27c205909f392e6c3cda330a",
+    "results/publication/2026-10-05-nine-line-v1/subset_metrics.csv": "a340e1e79d92a0b0244a2162a3f683cef10726e25612efca52c5563e02cbfe30",
+    "results/publication/2026-10-05-nine-line-v1/line_quality.csv": "21adaf4158078f815a1414b62e15d1a93051f0b033d25fa2373e360943b3ca83",
+    "results/publication/2026-10-05-nine-line-v1/metadata.json": "51079148198763a987aae07bceb562ec1725eaceb4c53969da64970bbc66b508",
+    "docs/nine_line_quality.md": "7b13302be7dc4388560bbba0b5c2e72c0f63df5df42004ce235af41ed83238b3",
+    "src/scteff/line_quality.py": "0ddc1863e05c43defd24f10583184696b005a658354a9cef2e3106dd94f75d81",
+    "tests/test_line_quality.py": "8a52298632457e8bf9cb07fa23f11470e658d91a4a707f10060716ac01cc26a2",
+    "config/lines.csv": "fbe152f639500d5e48f37ae47379c88bfaeca4179953a3b5f372c6d4a2f69162",
+    "config/calibration_models.toml": "11d27fe694807f18fbab575e67abb33d194efe4cf3d3018318b02c15dfe352e0"
+  },
+  "upstream_generator_code_sha256": {
+    "scripts/make_line_quality.py": "a3d4714c4ec92301fb5d9365ee83aed143a0535ae9837ee9edc7a41c5fb9cb52",
+    "src/scteff/line_quality.py": "0ddc1863e05c43defd24f10583184696b005a658354a9cef2e3106dd94f75d81",
+    "src/scteff/nine_line_paper.py": "77f4e153f16564b43ff3405ed384b832c130a14b94d3ce2084351760aea0e7e8",
+    "src/scteff/publication_calibration.py": "e97ed52d28eb034976dcbc28ed21f34ba4f64c3139b1b55f600dda8e2848d60d",
+    "src/scteff/publication_tables.py": "fe91fb0569997cb5dc24afe8b4d571027c5c7e178d32ef3df917393968de8883"
+  },
+  "upstream_software": {
+    "numpy": "2.5.3",
+    "python": "3.12.14"
+  },
+  "export": {
+    "measurement_source": "gaussian",
+    "models": {
+      "nandakumar_feh": "legacy_direct_metallicity_0p08",
+      "nandakumar_no_feh": "legacy_direct_1d_0p08"
+    },
+    "coefficient_rows": 18,
+    "validation_rows": 4088,
+    "subset_encoding": "bit i-1 denotes linei, masks 1 through 511",
+    "coefficient_conversion": "Decimal source strings to binary64; no refitting or rounding",
+    "validation_conversion": "Original N, bias and RMSE strings retained verbatim",
+    "coverage": "Training strengths; retained held-out temperature/metallicity references",
+    "excluded": "Spectra, per-star products, catalogues, source code and Git history"
+  },
+  "derived_sha256": {
+    "calibration.json": "5aacb112f19ca739ba8c973622e77eff7f9e424095699bb8a59e7d6fee309c84",
+    "subset_metrics.csv": "2c7618489d2849afb7d2e93899e607500427f8b62dc50b63bd4863d074b8231c"
+  },
+  "data_rights": "No additional data license or co-author permissions asserted; see DATA_NOTICE.md"
+}
