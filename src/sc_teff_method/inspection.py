@@ -242,6 +242,7 @@ class ReviewDocument:
         self._mask_drafts = {}
         self._mask_selection = {}
         self._continuum_drafts = {}
+        self._pending_inputs = {}
         self._note_errors = {}
         self._invalid_lines = set()
         self._selected = LINE_IDS[0]
@@ -404,21 +405,29 @@ class ReviewDocument:
         doc.title = "Sc I line-fitting review — local"
         selector.on_change("value", self._select_changed)
         for name in _FIELD_NAMES:
-            self.widgets[name].on_change("value", self._controls_changed)
+            self.widgets[name].on_change(
+                "value", self._committed_callback(name, self._controls_changed)
+            )
             self.widgets[name].on_change("value_input", self._draft_callback(name))
         automatic.on_change("active", self._controls_changed)
         continuum_enabled.on_change("active", self._continuum_changed)
         continuum_mode.on_change("value", self._continuum_changed)
         for name in _CONTINUUM_FIELDS:
-            self.widgets[name].on_change("value", self._continuum_changed)
+            self.widgets[name].on_change(
+                "value", self._committed_callback(name, self._continuum_changed)
+            )
             self.widgets[name].on_change("value_input", self._continuum_draft_callback(name))
         continuum_mouse.on_change("value", self._continuum_mouse_changed)
         remove_anchor1.on_click(lambda: self.remove_continuum_anchor(1))
         remove_anchor2.on_click(lambda: self.remove_continuum_anchor(2))
         reset_continuum.on_click(self.reset_continuum_selected)
         masks.on_change("value", self._mask_selected)
-        mask_lower.on_change("value", self._mask_field_changed)
-        mask_upper.on_change("value", self._mask_field_changed)
+        mask_lower.on_change(
+            "value", self._committed_callback("mask_lower", self._mask_field_changed)
+        )
+        mask_upper.on_change(
+            "value", self._committed_callback("mask_upper", self._mask_field_changed)
+        )
         mask_lower.on_change("value_input", self._mask_draft_callback("lower"))
         mask_upper.on_change("value_input", self._mask_draft_callback("upper"))
         note.on_change("value", self._note_changed)
@@ -458,20 +467,83 @@ class ReviewDocument:
         self._invalid_lines.add(line)
         self.refresh_results()
 
+    def _committed_callback(self, field, handler):
+        def callback(attr, old, new):
+            if not self._loading:
+                pending = self._pending_inputs.get(self.selected_line, {})
+                if pending.get(field) == new:
+                    pending.pop(field)
+            handler(attr, old, new)
+        return callback
+
+    def _store_pending_drafts(self, *, clear_applied=False) -> None:
+        """Keep only event-touched text drafts over current committed widget values.
+
+        A commit to one field must never clear another field's pending edit. Empty
+        value_input defaults are not drafts; only actual input events mark fields.
+        """
+        line = self.selected_line
+        pending = self._pending_inputs.get(line, {})
+        ordinary = {name: pending[name] for name in _FIELD_NAMES if name in pending}
+        if ordinary:
+            self._drafts[line] = {
+                **{name: self.widgets[name].value for name in _FIELD_NAMES},
+                "automatic_initial": bool(self.widgets["automatic_initial"].active),
+                **ordinary,
+            }
+        elif clear_applied:
+            self._drafts.pop(line, None)
+        continuum = {name: pending[name] for name in _CONTINUUM_FIELDS if name in pending}
+        if continuum:
+            self._continuum_drafts[line] = {**self._continuum_values(), **continuum}
+        elif clear_applied:
+            self._continuum_drafts.pop(line, None)
+        masks = {name.removeprefix("mask_"): pending[name]
+                 for name in ("mask_lower", "mask_upper") if name in pending}
+        if masks:
+            self._mask_drafts[line] = {
+                "selected": self.widgets["mask_selector"].value,
+                "lower": self.widgets["mask_lower"].value,
+                "upper": self.widgets["mask_upper"].value,
+                **masks,
+            }
+        elif clear_applied:
+            self._mask_drafts.pop(line, None)
+
+    def _control_availability(self) -> None:
+        automatic = bool(self.widgets["automatic_initial"].active)
+        for name in ("initial_amplitude", "initial_centre", "initial_sigma"):
+            self.widgets[name].disabled = automatic
+        linear = self.widgets["continuum_mode"].value == "linear"
+        for name in _CONTINUUM_FIELDS:
+            self.widgets[name].disabled = linear if name == "continuum_level" else not linear
+
+    def _sync_mask_selector(self, *, populate_bounds=False) -> None:
+        """Update the interval list without overwriting unrelated text inputs."""
+        regions = self._regions()
+        selected = self._mask_selection.get(self.selected_line, "0" if regions else "")
+        if selected and not 0 <= int(selected) < len(regions):
+            selected = "0" if regions else ""
+        self._loading = True
+        self.widgets["mask_selector"].options = [("", "New interval / drag to add")] + [
+            (str(i), f"{i+1}: {lo:.7f} – {hi:.7f} Å") for i, (lo, hi) in enumerate(regions)
+        ]
+        self.widgets["mask_selector"].value = selected
+        if populate_bounds:
+            self.widgets["mask_lower"].value = repr(regions[int(selected)][0]) if selected else ""
+            self.widgets["mask_upper"].value = repr(regions[int(selected)][1]) if selected else ""
+        self._loading = False
+
     def _draft_callback(self, field):
         def callback(attr, old, new):
             self._field_draft_changed(field, new)
         return callback
 
     def _field_draft_changed(self, field, new) -> None:
-        if self._loading:
+        if self._loading or new == self.widgets[field].value:
             return
-        values = dict(self._drafts.get(self.selected_line, {}))
-        for name in _FIELD_NAMES:
-            values.setdefault(name, self.widgets[name].value)
-        values[field] = new
-        values["automatic_initial"] = bool(self.widgets["automatic_initial"].active)
-        self._drafts[self.selected_line] = values
+        self._pending_inputs.setdefault(self.selected_line, {})[field] = new
+        self._store_pending_drafts()
         self._clear_approval()
 
     def _controls_changed(self, attr, old, new) -> None:
@@ -501,7 +573,7 @@ class ReviewDocument:
             )
         return window, initial
 
-    def apply_controls(self, *, regions=None, continuum=None) -> None:
+    def apply_controls(self, *, regions=None, continuum=None) -> bool:
         self._clear_approval()
         try:
             window, initial = self._line_arguments()
@@ -524,15 +596,26 @@ class ReviewDocument:
                 **{name: self.widgets[name].value for name in _FIELD_NAMES},
                 "automatic_initial": bool(self.widgets["automatic_initial"].active),
             }
+            self._store_pending_drafts()
             self._error(exc)
             self.refresh_results()
-            return
-        self._drafts.pop(self.selected_line, None)
-        self._mask_drafts.pop(self.selected_line, None)
-        self._continuum_drafts.pop(self.selected_line, None)
-        self._invalid_lines.discard(self.selected_line)
+            return False
+        pending = self._pending_inputs.get(self.selected_line, {})
+        for field, value in tuple(pending.items()):
+            if self.widgets[field].value == value:
+                pending.pop(field)
+        self._store_pending_drafts(clear_applied=True)
+        if pending:
+            self._invalid_lines.add(self.selected_line)
+        else:
+            self._invalid_lines.discard(self.selected_line)
         self._success("Line refitted; scientific review is pending.")
-        self.refresh()
+        # Refitting can finish while the browser is already editing another field.
+        # Do not send unrelated TextInput.value patches that overwrite that input.
+        self._control_availability()
+        self._sync_mask_selector()
+        self.refresh_results()
+        return True
 
     def reset_selected(self) -> None:
         self.session.reset_line(self.selected_line)
@@ -540,6 +623,7 @@ class ReviewDocument:
         self._mask_drafts.pop(self.selected_line, None)
         self._mask_selection.pop(self.selected_line, None)
         self._continuum_drafts.pop(self.selected_line, None)
+        self._pending_inputs.pop(self.selected_line, None)
         self._note_errors.pop(self.selected_line, None)
         self._invalid_lines.discard(self.selected_line)
         self._success("Line reset to default window, automatic start, unity continuum "
@@ -570,9 +654,8 @@ class ReviewDocument:
         def callback(attr, old, new):
             if self._loading or new == self.widgets[field].value:
                 return
-            values = self._continuum_values()
-            values[field] = new
-            self._continuum_drafts[self.selected_line] = values
+            self._pending_inputs.setdefault(self.selected_line, {})[field] = new
+            self._store_pending_drafts()
             self._clear_approval()
         return callback
 
@@ -580,16 +663,47 @@ class ReviewDocument:
         if self._loading:
             return
         self._continuum_drafts[self.selected_line] = self._continuum_values()
+        self._store_pending_drafts()
         if attr == "active" and not new:
+            pending = self._pending_inputs.get(self.selected_line, {})
+            had_draft = any(name in pending for name in _CONTINUUM_FIELDS)
+            for name in _CONTINUUM_FIELDS:
+                pending.pop(name, None)
             try:
                 correction = self._continuum_arguments()
             except (TypeError, ValueError):
                 # Disabling is always possible, even with incomplete anchor drafts.
                 correction = replace(self.session.controls[self.selected_line].continuum,
                                      enabled=False)
+                had_draft = True
+            if had_draft:
+                # Disabling explicitly discards invalid continuum drafts only.
+                self._populate_continuum(correction)
             self.apply_controls(continuum=correction)
         else:
             self.apply_controls()
+
+    def _populate_continuum(self, correction, *, include_draft=False) -> None:
+        anchors = correction.anchors
+        fit = self.session.fits[self.selected_line]
+        values = {
+            "enabled": correction.enabled,
+            "mode": correction.mode if correction.mode != "none" else "constant",
+            "continuum_level": repr(correction.level),
+            "continuum_anchor1_x": repr(anchors[0][0]) if anchors else repr(fit.window[0]),
+            "continuum_anchor1_y": repr(anchors[0][1]) if anchors else "1.0",
+            "continuum_anchor2_x": repr(anchors[1][0]) if len(anchors) > 1 else repr(fit.window[1]),
+            "continuum_anchor2_y": repr(anchors[1][1]) if len(anchors) > 1 else "1.0",
+        }
+        if include_draft:
+            values.update(self._continuum_drafts.get(self.selected_line, {}))
+        was_loading = self._loading
+        self._loading = True
+        self.widgets["continuum_enabled"].active = [0] if values["enabled"] else []
+        self.widgets["continuum_mode"].value = values["mode"]
+        for name in _CONTINUUM_FIELDS:
+            self.widgets[name].value = values[name]
+        self._loading = was_loading
 
     def _continuum_mouse_changed(self, attr, old, new) -> None:
         self.detail_plot.profile.toolbar.active_drag = (
@@ -616,6 +730,11 @@ class ReviewDocument:
             self.widgets[f"continuum_anchor{anchor}_x"].value = repr(float(event.x))
             self.widgets[f"continuum_anchor{anchor}_y"].value = repr(float(event.y))
         self._loading = False
+        pending = self._pending_inputs.get(self.selected_line, {})
+        touched = (["continuum_level"] if action == "constant" else
+                   [f"continuum_anchor{anchor}_x", f"continuum_anchor{anchor}_y"])
+        for name in touched:
+            pending.pop(name, None)
         self._continuum_changed(None, None, None)
 
     def remove_continuum_anchor(self, index: int) -> None:
@@ -638,6 +757,8 @@ class ReviewDocument:
             self.widgets[f"continuum_anchor{index}_y"].value = "1.0"
         self._loading = False
         self._continuum_drafts.pop(self.selected_line, None)
+        for name in _CONTINUUM_FIELDS:
+            self._pending_inputs.get(self.selected_line, {}).pop(name, None)
         self.apply_controls()
         if self.selected_line not in self._invalid_lines:
             self._success("Local continuum reset to unity; scientific review is pending.")
@@ -688,8 +809,11 @@ class ReviewDocument:
                 "selected": selected, "lower": self.widgets["mask_lower"].value,
                 "upper": self.widgets["mask_upper"].value,
             }))
+            if new == self.widgets[f"mask_{boundary}"].value:
+                return
             draft[boundary] = new
             self._mask_drafts[self.selected_line] = draft
+            self._pending_inputs.setdefault(self.selected_line, {})[f"mask_{boundary}"] = new
             self._clear_approval()
         return callback
 
@@ -742,7 +866,10 @@ class ReviewDocument:
         del regions[int(selected)]
         self._mask_drafts.pop(self.selected_line, None)
         self._mask_selection[self.selected_line] = str(min(int(selected), len(regions)-1))
-        self.apply_controls(regions=regions)
+        for name in ("mask_lower", "mask_upper"):
+            self._pending_inputs.get(self.selected_line, {}).pop(name, None)
+        if self.apply_controls(regions=regions):
+            self._sync_mask_selector(populate_bounds=True)
 
     def _mask_geometry(self, event) -> None:
         if (self.widgets["continuum_mouse"].value != "mask"
@@ -756,7 +883,8 @@ class ReviewDocument:
             return
         regions = self._regions()
         self._mask_selection[self.selected_line] = str(len(regions))
-        self.apply_controls(regions=[*regions, (lower, upper)])
+        if self.apply_controls(regions=[*regions, (lower, upper)]):
+            self._sync_mask_selector(populate_bounds=True)
 
     def _note_changed(self, attr, old, new) -> None:
         if self._loading:
@@ -959,25 +1087,8 @@ class ReviewDocument:
         self.widgets["mask_selector"].value = mask_values["selected"]
         self.widgets["mask_lower"].value = mask_values["lower"]
         self.widgets["mask_upper"].value = mask_values["upper"]
-        correction = controls.continuum
-        anchors = correction.anchors
-        continuum_values = {
-            "enabled": correction.enabled,
-            "mode": correction.mode if correction.mode != "none" else "constant",
-            "continuum_level": repr(correction.level),
-            "continuum_anchor1_x": repr(anchors[0][0]) if anchors else repr(fit.window[0]),
-            "continuum_anchor1_y": repr(anchors[0][1]) if anchors else "1.0",
-            "continuum_anchor2_x": repr(anchors[1][0]) if len(anchors) > 1 else repr(fit.window[1]),
-            "continuum_anchor2_y": repr(anchors[1][1]) if len(anchors) > 1 else "1.0",
-        }
-        continuum_values.update(self._continuum_drafts.get(line, {}))
-        self.widgets["continuum_enabled"].active = [0] if continuum_values["enabled"] else []
-        self.widgets["continuum_mode"].value = continuum_values["mode"]
-        for name in _CONTINUUM_FIELDS:
-            self.widgets[name].value = continuum_values[name]
-            is_level = name == "continuum_level"
-            self.widgets[name].disabled = ((continuum_values["mode"] == "linear") if is_level
-                                           else continuum_values["mode"] != "linear")
+        self._populate_continuum(controls.continuum, include_draft=True)
+        self._control_availability()
         self.widgets["review_note"].value = self._note_errors.get(
             line, self.session.decisions[line].note,
         )
@@ -1013,6 +1124,7 @@ class ReviewDocument:
         self._drafts.clear()
         self._mask_drafts.clear()
         self._continuum_drafts.clear()
+        self._pending_inputs.clear()
         self._mask_selection.clear()
         self._note_errors.clear()
         self._invalid_lines.clear()

@@ -461,3 +461,75 @@ def test_late_continuum_value_input_event_does_not_reinvalidate_a_committed_edit
     controller._continuum_draft_callback("continuum_level")("value_input", "1.025", "0")
     assert controller.session.decisions["line1"].state == "pending"
     assert controller.widgets["accept_line"].disabled
+
+
+def test_anchor_commit_preserves_another_pending_field_and_blocks_approval(controller, tmp_path):
+    controller.widgets["line_selector"].value = "line3"
+    controller.widgets["continuum_mode"].value = "linear"
+    controller.widgets["continuum_enabled"].active = [0]
+    controller.decide_selected("accepted")
+    anchor2 = controller.widgets["continuum_anchor2_y"]
+    anchor2.value_input = "1.025"
+    controller.widgets["continuum_anchor1_y"].value = "1.005"
+    # The first server refit must not rewrite the other TextInput or lose its draft.
+    assert anchor2.value == "1.0"
+    assert anchor2.value_input == "1.025"
+    assert controller._continuum_drafts["line3"]["continuum_anchor2_y"] == "1.025"
+    assert controller.widgets["accept_line"].disabled
+    click(controller.widgets["save_review"])
+    assert not (tmp_path / "review.json").exists()
+    anchor2.value = "1.025"
+    assert not controller.widgets["accept_line"].disabled
+    assert controller.session.controls["line3"].continuum.anchors[0][1] == 1.005
+    assert controller.session.controls["line3"].continuum.anchors[1][1] == 1.025
+    assert "line3" not in controller._continuum_drafts
+
+
+def test_other_control_commit_preserves_pending_continuum_and_window_drafts(controller):
+    controller.widgets["continuum_enabled"].active = [0]
+    controller.widgets["continuum_level"].value_input = "1.045"
+    before = controller.session.fits["line1"]
+    controller.widgets["window_lower"].value = str(before.window[0]+0.1)
+    assert controller.widgets["continuum_level"].value == "1.0"
+    assert controller.widgets["continuum_level"].value_input == "1.045"
+    assert controller.widgets["accept_line"].disabled
+    controller.widgets["continuum_level"].value = "1.045"
+    assert not controller.widgets["accept_line"].disabled
+    next_lower = str(before.window[0]+0.2)
+    controller.widgets["window_lower"].value_input = next_lower
+    controller.widgets["continuum_level"].value = "1.035"
+    assert controller._drafts["line1"]["window_lower"] == next_lower
+    assert controller.widgets["accept_line"].disabled
+    controller.widgets["line_selector"].value = "line2"
+    controller.widgets["line_selector"].value = "line1"
+    assert controller.widgets["window_lower"].value == next_lower
+    click(controller.widgets["refit_line"])
+    assert not controller.widgets["accept_line"].disabled
+    assert controller.session.fits["line1"].window[0] == float(next_lower)
+
+
+def test_mask_commit_keeps_uncommitted_continuum_draft(controller):
+    rest = controller.session.fits["line1"].rest_wavelength_air_angstrom
+    controller.widgets["mask_lower"].value = str(rest+1.1)
+    controller.widgets["mask_upper"].value = str(rest+1.6)
+    click(controller.widgets["mask_add"])
+    controller.widgets["continuum_level"].value_input = "1.025"
+    controller.widgets["mask_upper"].value = str(rest+1.7)
+    assert controller._continuum_drafts["line1"]["continuum_level"] == "1.025"
+    assert controller.widgets["accept_line"].disabled
+    controller.widgets["continuum_level"].value = "1.025"
+    assert not controller.widgets["accept_line"].disabled
+    assert controller.session.controls["line1"].excluded_regions[0] == (rest+1.1, rest+1.7)
+
+
+def test_older_commit_cannot_clear_a_newer_draft_in_the_same_field(controller):
+    field = controller.widgets["continuum_level"]
+    field.value_input = "1.025"
+    # Batched browser events may deliver a newer input before an older blur commit.
+    field.value = "1.02"
+    assert controller._pending_inputs["line1"]["continuum_level"] == "1.025"
+    assert controller._continuum_drafts["line1"]["continuum_level"] == "1.025"
+    assert controller.widgets["accept_line"].disabled
+    field.value = "1.025"
+    assert not controller.widgets["accept_line"].disabled
+    assert controller.session.controls["line1"].continuum.level == 1.025

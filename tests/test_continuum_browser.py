@@ -190,6 +190,8 @@ def test_browser_manual_continuum_anchors_review_save_restore_and_headless_repla
             )
             # Actual mouse taps add/move both anchors; no Python callback injection.
             for action, fraction in (("anchor1", 0.22), ("anchor2", 0.80)):
+                anchor_field = f"continuum_{action}_x"
+                previous_x = page.locator(f".{anchor_field} input").input_value()
                 page.locator(".continuum_mouse select").select_option(
                     index=2 if action == "anchor1" else 3
                 )
@@ -199,7 +201,12 @@ def test_browser_manual_continuum_anchors_review_save_restore_and_headless_repla
                 assert rectangle is not None
                 page.mouse.click(rectangle["x"] + fraction*rectangle["width"],
                                  rectangle["y"] + 0.18*rectangle["height"])
-                wait_text(page, "review_message", "refitted")
+                # Wait for this tap's coordinates, not a previous refit's status text.
+                page.wait_for_function(
+                    "([field, old]) => "
+                    "Bokeh.documents[0].get_model_by_name(field).value !== old",
+                    arg=[anchor_field, previous_x], timeout=15000,
+                )
                 page.wait_for_function(
                     "Bokeh.documents[0].get_model_by_name('continuum_enabled').active.length===1",
                     timeout=15000,
@@ -211,8 +218,18 @@ def test_browser_manual_continuum_anchors_review_save_restore_and_headless_repla
             assert x2 > x1
             # Precision editing supplies the known invented analytical continuum.
             rest = get_calibration().lines["line3"].wavelength_air_angstrom
-            fill(page, "continuum_anchor1_y", 1.012+0.006*(x1-rest))
-            fill(page, "continuum_anchor2_y", 1.012+0.006*(x2-rest))
+            expected_y1, expected_y2 = 1.012+0.006*(x1-rest), 1.012+0.006*(x2-rest)
+            # Back-to-back edits intentionally have no server-ack wait between them.
+            # An earlier refit's response must not overwrite the next focused input.
+            fill(page, "continuum_anchor1_y", expected_y1)
+            fill(page, "continuum_anchor2_y", expected_y2)
+            playwright.expect(page.locator(".continuum_anchor1_y input")).to_have_value(
+                repr(expected_y1)
+            )
+            playwright.expect(page.locator(".continuum_anchor2_y input")).to_have_value(
+                repr(expected_y2)
+            )
+            playwright.expect(page.locator(".accept_line button")).to_be_enabled()
             wait_text(page, "fit_details", "Before correction:")
             after = float(re.search(r"Area ([\d.eE+-]+)", model_text(page, "fit_details")).group(1))
             assert abs(before-after) > 0.01
@@ -235,6 +252,7 @@ def test_browser_manual_continuum_anchors_review_save_restore_and_headless_repla
             correction = saved["lines"]["line3"]["controls"]["continuum"]
             assert saved["schema_version"] == 2
             assert correction["enabled"] and correction["mode"] == "linear"
+            assert correction["anchors"] == [[x1, expected_y1], [x2, expected_y2]]
             click(page, "reset_continuum")
             wait_text(page, "review_message", "reset to unity")
             wait_text(page, "reviewed_summary", "Missing")
