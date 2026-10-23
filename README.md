@@ -1,9 +1,11 @@
 # sc_teff_method
 
-Calculate effective temperatures of cool giant stars from measured K-band Sc I
-Gaussian line areas. This small Python package applies the frozen
+Calculate effective temperatures of cool giant stars from K-band Sc I Gaussian
+line areas, either supplied directly or fitted to your continuum-normalised
+spectrum. This package applies the frozen
 **5 October 2026 nine-line calibration** on the Nandakumar et al. (2023)
-temperature scale. It has no runtime dependencies beyond Python 3.11 or later.
+temperature scale. The measured-area API needs only Python 3.11 or later;
+optional spectrum fitting uses NumPy, SciPy and Matplotlib.
 
 Supply any non-empty subset of `line1` through `line9`. Each line gives a
 temperature; the combined estimate is their **unweighted mean**. The main method
@@ -19,9 +21,118 @@ python -m pip install .
 python examples/use_measured_areas.py
 ```
 
+For spectrum fitting and diagnostic figures, install the optional libraries:
+
+```bash
+python -m pip install ".[spectra]"
+```
+
 The installed package includes its calibration and validation tables. It runs
 offline and needs no access to the private paper repository. This PR does not
 publish a PyPI package, GitHub release or archive deposit.
+
+## Fit a prepared spectrum
+
+Inputs must contain **air wavelengths in Å** and flux already normalised to a
+continuum of unity. The package does not infer units or air/vacuum convention,
+normalise the continuum, infer radial velocity or read FITS files. Arrays must
+have increasing positive finite wavelengths. Nonfinite flux or uncertainty is
+allowed only at pixels you explicitly mask; mask `True` means exclude.
+
+Generate six entirely analytical examples, then run the command-line workflow:
+
+```bash
+python examples/generate_synthetic_spectra.py --output-dir synthetic_examples
+sc-teff fit synthetic_examples/clean.csv \
+  --delimiter , --header --wavelength-column wavelength --flux-column flux \
+  --mask-column exclude --wavelength-unit angstrom --wavelength-frame air \
+  --continuum-normalised --feh -0.2 --output-dir synthetic_fit \
+  --label "Analytical synthetic spectrum"
+```
+
+For your own whitespace ASCII file, column indices are zero based (default
+wavelength=0, flux=1). CSV requires an explicit delimiter; named columns require
+`--header`. Use `--uncertainty-column` for absolute pixel flux standard deviations
+and `--mask-column` for a numeric `0=use, 1=exclude` column. Full-line `#` comments
+are supported; missing fields, empty data rows and unordered grids are rejected.
+
+The command creates `summary.json`, `lines.csv` and `diagnostics.png` in a new
+directory. JSON records the calibration, input hash/parser settings, RV correction,
+fit options, windows, initial overrides, exclusions, areas/errors/flags, per-line
+temperatures, actual included subset and its held-out statistics. CSV retains all
+nine line outcomes. Missing results are JSON `null` or empty CSV cells, never zero.
+Use `--plot-format pdf` or `both` for PDF output. Existing directories are refused
+unless you explicitly pass `--overwrite`; unrelated files are retained.
+
+**Open the diagnostic figure and inspect the fits before interpreting Teff.**
+Every panel shows the input pixels, model, excluded pixels, rest/fitted centres,
+window boundaries, residuals, status and area. Numerical convergence is not
+scientific acceptance. Failed or unavailable fits cannot contribute; converged
+fits with numerical quality flags are excluded by default. After inspection,
+`--include-warned` explicitly permits those flagged fits. `--exclude-line line4`
+always excludes a selected line. Calibration extrapolation warnings remain
+separate and retain the PR 1 behaviour described below.
+
+No velocity correction is applied unless you supply `--rv-kms`. Positive velocity
+means recession/redshift: `lambda_rest = lambda_input / sqrt((1+v/c)/(1-v/c))`,
+with `c=299792.458 km/s`. Flux is not interpolated. For the generated RV example,
+pass `--rv-kms 65`. All windows, centre guesses and exclusion intervals refer to
+the corrected **rest-frame air-Å** grid.
+
+The array API makes the same input declarations explicit:
+
+```python
+from sc_teff_method import fit_spectrum, write_fit_outputs
+from sc_teff_method.synthetic import make_synthetic_spectrum
+
+toy = make_synthetic_spectrum("noise")  # mathematical Gaussians; fixed seed
+analysis = fit_spectrum(
+    toy.wavelength_air_angstrom, toy.flux,
+    wavelength_unit="angstrom", wavelength_frame="air", continuum_normalised=True,
+    uncertainty=toy.uncertainty, mask=toy.mask, rv_kms=toy.rv_kms,
+    configuration="nandakumar_feh", feh=-0.2,
+    quality_policy="exclude_warned",
+)
+for line_id, fit in analysis.fits.items():
+    print(line_id, fit.status, fit.area_angstrom, fit.flags)
+if analysis.temperature is not None:
+    print(analysis.temperature.temperature_k, analysis.included_line_ids)
+    print(analysis.performance.n_stars, analysis.performance.bias_k, analysis.performance.rmse_k)
+write_fit_outputs(analysis, "my_synthetic_fit", spectrum_label="Analytical synthetic: noise")
+```
+
+`load_spectrum(...)` returns a prepared `Spectrum`; pass it to
+`estimate_from_spectrum(...)` without applying RV twice. The workflow supports
+both frozen configurations, with explicit [Fe/H] required only by
+`nandakumar_feh`. Any surviving non-empty subset is calibrated through the unchanged
+PR 1 API. If none survives, the temperature and validation result remain missing;
+the CLI still saves diagnostics and returns exit code 3 (invalid input returns 2).
+
+Default windows are **provisional symmetric ±3 Å intervals**, with continuum fixed
+to one, bounded amplitude/centre/width and unweighted least squares. They are not
+copied from individual stars or observationally approved. Override each window
+with `--window LINE:LOWER:UPPER`, an initial guess with
+`--initial LINE:AMPLITUDE:CENTRE:SIGMA`, and contaminated pixels with
+`--exclude-region LINE:LOWER:UPPER`. A JSON `--fit-config` or Python `FitOptions`
+controls bounds and diagnostic thresholds. Supplying pixel uncertainties enables
+inverse-sigma weighting and absolute formal covariance; transfer from the original
+unweighted measurements requires scientific assessment.
+
+Continuum errors, blends, resolution and the choice of fitting window change
+Gaussian areas. Good numerical fits do not establish reliable temperatures.
+The empirical calibration remains tied to the observational conditions described
+in the manuscript. Analytical synthetic tests establish numerical correctness,
+**not transfer accuracy for arbitrary instruments or populations**. Formal fit
+errors omit continuum, profile and calibration systematics; line scatter is not
+the total temperature uncertainty.
+
+See [the fitting guide](docs/spectrum_fitting.md) for model/error definitions,
+flags, complete defaults, configuration examples and synthetic verification.
+
+![Entirely analytical synthetic diagnostic figure](docs/images/synthetic_diagnostics.png)
+
+This illustrative figure uses invented Gaussian profiles, noise-free mathematical
+blends and an explicit pixel exclusion. It contains no observational spectrum.
 
 ## Use your measured areas
 
@@ -195,12 +306,15 @@ The [MIT software licence](LICENSE) is retained. See
 data-attribution/permission checks. No additional data licence or co-author
 permissions are assumed.
 
-PR 1 accepts measured areas only. Spectrum reading, continuum normalisation,
-radial-velocity correction, Gaussian fitting, HFS fitting, synthetic spectral
-generation and calibration refitting are outside its scope. There are **no
-spectral datasets**, observed spectral plots, cutouts or wavelength–flux arrays
-in this package. Examples and tests use illustrative areas and approved derived
-calibration products only.
+The original measured-area API and its approved frozen numerical products are
+preserved. New spectrum examples and tests generate analytical Gaussian arrays
+at run time, using invented parameters and fixed noise seeds. **No observational
+spectra, extracts, wavelength–flux arrays or observed spectral plots are included
+or used for development.** The only committed spectral figure is generated by
+the analytical example code. FITS input, automatic continuum normalisation, HFS
+fitting, rectangular-band measurements, interactive continuum editing, stellar
+spectral synthesis, calibration refitting and new observational validation are
+outside this PR's scope.
 
 ## Development
 
@@ -215,4 +329,10 @@ Public tests run without the private repository. They include fixed regressions
 from the reference estimator, every subset identity and option combination,
 all subset temperature means, input validation, boundary warnings and data
 integrity checks. GitHub Actions builds distributions and runs the tests and
-example against the installed wheel on Python 3.11 and 3.14.
+examples against the installed wheel on Python 3.11 and 3.14. The spectral tests
+use analytical data exclusively and check Gaussian parameter/area recovery,
+independent covariance calculations, both RV signs, masks/gaps/failed fits,
+inclusion policies, CLI output precision and overwrite protection. Install the
+`dev` extra to run both the original and spectral tests. With the base `test`
+extra alone, the original tests run and spectral tests skip their unavailable
+optional dependencies.
