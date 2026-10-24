@@ -1269,9 +1269,8 @@ def create_inspection_server(
 
     def make_document(doc):
         if hfs_session is not None:
-            switcher = Select(title="Review method", value="gaussian",
-                              options=[("gaussian", "Gaussian"),
-                                       ("hfs", "Hyperfine structure (HFS)")],
+            switcher = Select(title="Review method", value="Gaussian",
+                              options=["Gaussian", "HFS"],
                               width=270, name="profile_method")
             switcher.css_classes = ["profile_method"]
             comparison = Div(width=1000, name="method_comparison")
@@ -1305,8 +1304,8 @@ def create_inspection_server(
             hfs_root = doc.roots[-1]
             hfs_root.visible = False
             def switch(attr, old, new):
-                gaussian_root.visible = switcher.value == "gaussian"
-                hfs_root.visible = switcher.value == "hfs"
+                gaussian_root.visible = switcher.value == "Gaussian"
+                hfs_root.visible = switcher.value == "HFS"
                 g = controller.session.reviewed.temperature
                 h = hfs_controller.session.reviewed.temperature
                 gv = "pending" if g is None else f"{g.temperature_k:.2f} K"
