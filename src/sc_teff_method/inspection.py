@@ -425,7 +425,7 @@ class ReviewDocument:
                        row(review, save, load, spacing=10), overwrite,
                        row(output, export, formats, spacing=10), notes, spacing=6, width=1400)
         footnote = Div(text=(
-            "Formal Gaussian errors exclude continuum and profile systematics. "
+            "Formal profile-fit covariance errors exclude continuum and profile systematics. "
             "Calibration applicability depends on measurement and observational compatibility. "
             "Synthetic examples establish software correctness, not transfer accuracy. "
             "This application uses only a local loopback server; no uploads or cloud service. "
@@ -1039,7 +1039,8 @@ class ReviewDocument:
         )
         if parameters is not None:
             status += (
-                f"<br/>Depth {_number(parameters.amplitude, 7)}; centre "
+                f"<br/>Mixture amplitude A {_number(parameters.amplitude, 7)}; centre " 
+                if hfs else f"<br/>Depth {_number(parameters.amplitude, 7)}; centre "
                 f"{parameters.centre_air_angstrom:.7f} Å; sigma "
                 f"{_number(parameters.sigma_angstrom, 7)} Å."
             )
