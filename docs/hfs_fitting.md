@@ -4,7 +4,7 @@ Install from the public checkout with `python -m pip install ".[spectra]"`.
 The numerical HFS engine uses the existing NumPy, SciPy and Matplotlib optional
 dependencies; it requires no Bokeh, network service or private repository.
 The original Gaussian commands, review files and coefficients retain their
-existing meaning. Interactive HFS inspection is deferred to a subsequent PR.
+existing meaning. Optional local HFS scientific inspection is documented in [the dual-method review guide](hfs_interactive_review.md).
 
 ## Start with an analytical nine-line spectrum
 

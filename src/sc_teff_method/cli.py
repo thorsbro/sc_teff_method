@@ -133,6 +133,18 @@ def _parser() -> argparse.ArgumentParser:
         "--review-file", type=Path, help="Restore controls and decisions for this input"
     )
     inspect.add_argument(
+        "--with-hfs", action="store_true",
+        help="Enable independent Gaussian/HFS review panels and switch between them",
+    )
+    inspect.add_argument(
+        "--hfs-review-file", type=Path,
+        help="Restore a separately saved HFS scientific review for the same spectrum",
+    )
+    inspect.add_argument(
+        "--save-hfs-review", type=Path,
+        help="HFS review JSON output path, default hfs-review.json",
+    )
+    inspect.add_argument(
         "--save-review", type=Path, help="Initial Save review path in the interface"
     )
     inspect.add_argument("--output-dir", type=Path, default=Path("review-results"))
@@ -155,6 +167,11 @@ def _parser() -> argparse.ArgumentParser:
     replay.add_argument("spectrum", type=Path)
     replay.add_argument("--review-file", type=Path, required=True)
     _add_output_arguments(replay)
+    replay_hfs = commands.add_parser("replay-hfs",
+                                     help="Reproduce an accepted HFS review without Bokeh")
+    replay_hfs.add_argument("spectrum", type=Path)
+    replay_hfs.add_argument("--review-file", type=Path, required=True)
+    _add_output_arguments(replay_hfs)
     return parser
 
 
@@ -366,6 +383,23 @@ def _restore_review(spectrum_path, review_path):
     return ReviewSession.from_dict(spectrum, payload, input_identity=identity)
 
 
+def _restore_hfs_review(spectrum_path, review_path):
+    from .hfs_review import HFSReviewSession, read_hfs_review
+    from .review_io import load_spectrum_identity
+
+    payload = read_hfs_review(review_path)
+    source = Path(spectrum_path).expanduser()
+    saved = payload["input"]
+    if hashlib.sha256(source.read_bytes()).hexdigest() != saved["sha256"]:
+        raise ValueError("Input spectrum SHA-256 checksum differs from HFS review")
+    spectrum, identity = load_spectrum_identity(
+        source, loader_settings=saved["loader_settings"], rv_kms=saved["rv_kms"],
+        wavelength_unit=saved["wavelength_unit"], wavelength_frame=saved["wavelength_frame"],
+        continuum_normalised=saved["continuum_normalised"],
+    )
+    return HFSReviewSession.from_dict(spectrum, payload, input_identity=identity)
+
+
 def _run_inspect(args) -> int:
     from .continuum import ContinuumOptions
     from .inspection import serve_inspection
@@ -376,6 +410,8 @@ def _run_inspect(args) -> int:
     if args.fit_config is not None:
         args.fit_config = args.fit_config.expanduser()
     protected = [args.spectrum] + ([args.fit_config] if args.fit_config is not None else [])
+    if (args.hfs_review_file is not None or args.save_hfs_review is not None) and not args.with_hfs:
+        raise ValueError("--hfs-review-file and --save-hfs-review require --with-hfs")
     if args.review_file is not None:
         scientific_arguments = (
             "wavelength_unit",
@@ -447,15 +483,38 @@ def _run_inspect(args) -> int:
                 warn_extrapolation=not args.no_continuum_extrapolation_warning,
             ),
         )
+    hfs_session = None
+    hfs_review_path = args.save_hfs_review or args.hfs_review_file or Path("hfs-review.json")
+    if args.with_hfs:
+        from .hfs_review import HFSReviewSession
+        from .review import _prepared_digest
+
+        if args.hfs_review_file is not None:
+            hfs_session = _restore_hfs_review(args.spectrum, args.hfs_review_file)
+            if _prepared_digest(hfs_session.spectrum) != _prepared_digest(session.spectrum):
+                raise ValueError("The Gaussian and HFS reviews require identical prepared input")
+        else:
+            hfs_session = HFSReviewSession.create(
+                session.spectrum, input_identity=session.input_identity,
+                configuration=session.configuration, feh=session.feh,
+                reference_temperature_k=session.reference_temperature_k,
+                validation_scope=session.validation_scope,
+            )
+        if hfs_review_path == (args.save_review or args.review_file or Path("review.json")):
+            raise ValueError("Gaussian and HFS reviews must use different filenames")
     serve_inspection(
         session,
         port=args.port,
         review_path=args.save_review or args.review_file or Path("review.json"),
         output_dir=args.output_dir,
-        protected_paths=protected,
+        protected_paths=[*protected, *([args.hfs_review_file] if args.hfs_review_file else [])],
         export_protected_paths=[args.review_file] if args.review_file is not None else (),
         spectrum_label=args.label,
         open_browser=not args.no_browser,
+        hfs_session=hfs_session, hfs_review_path=hfs_review_path,
+        hfs_output_dir=Path("hfs-review-results"),
+        hfs_export_protected_paths=[args.hfs_review_file]
+        if args.hfs_review_file is not None else (),
     )
     return 0
 
@@ -493,11 +552,31 @@ def _run_replay(args) -> int:
     return 0 if result.temperature is not None else 3
 
 
+def _run_replay_hfs(args) -> int:
+    from .hfs_review_exports import write_hfs_review_outputs
+
+    session = _restore_hfs_review(args.spectrum, args.review_file)
+    result = session.reviewed
+    write_hfs_review_outputs(
+        session, args.output_dir, overwrite=args.overwrite,
+        plot_format=args.plot_format, spectrum_label=args.label,
+        protected_paths=[args.spectrum, args.review_file],
+    )
+    if result.temperature is None:
+        print("No accepted valid HFS fits; reviewed temperature is missing")
+    else:
+        print(f"Reviewed HFS Teff = {result.temperature.temperature_k:.6f} K "
+              f"from {result.temperature.n_lines} accepted HFS lines")
+    print(f"Outputs: {args.output_dir}")
+    return 0 if result.temperature is not None else 3
+
+
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     try:
         return {"fit": _run_fit, "fit-hfs": _run_hfs,
-                "inspect": _run_inspect, "replay": _run_replay}[args.command](args)
+                "inspect": _run_inspect, "replay": _run_replay,
+                "replay-hfs": _run_replay_hfs}[args.command](args)
     except (ValueError, TypeError, OSError, ImportError) as exc:
         print(f"sc-teff: {exc}", file=sys.stderr)
         return 2
