@@ -1,8 +1,8 @@
 """Full local Chromium smoke test for independent Gaussian/HFS review controls.
-# ruff: noqa: E402
 
 Only newly generated analytical hyperfine profiles are used. No private data.
 """
+# ruff: noqa: E402
 from __future__ import annotations
 
 import json
