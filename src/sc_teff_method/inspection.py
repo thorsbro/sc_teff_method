@@ -301,7 +301,7 @@ class ReviewDocument:
             "<span style='color:#a9afb6'>— Original input</span> · "
             "<span style='color:#247397'>● Corrected fitting pixels</span> · "
             "<span style='color:#33845a'>-- User continuum / ◆ anchors</span> · "
-            "<span style='color:#d8871d'>— Gaussian / fitted centre</span> · "
+            "<span style='color:#d8871d'>— Profile / fitted centre</span> · "
             "grey dashed: laboratory centre · purple dotted: window · "
             "<span style='color:#bf3f39'>× excluded pixels</span> · Gaussian continuum fixed at 1"
         ), width=1400, styles={"font-size": "11px"})
@@ -1268,6 +1268,14 @@ def create_inspection_server(
         baseline["hfs_export_paths"] = tuple(controller.export_protected_paths)
 
     def make_document(doc):
+        if hfs_session is not None:
+            switcher = Select(title="Review method", value="gaussian",
+                              options=[("gaussian", "Gaussian"),
+                                       ("hfs", "Hyperfine structure (HFS)")],
+                              width=270, name="profile_method")
+            switcher.css_classes = ["profile_method"]
+            comparison = Div(width=1000, name="method_comparison")
+            doc.add_root(row(switcher, comparison))
         local_session = ReviewSession.from_dict(
             session.spectrum, baseline["payload"], input_identity=session.input_identity,
         )
@@ -1296,12 +1304,6 @@ def create_inspection_server(
             hfs_controller._persisted = saved_hfs
             hfs_root = doc.roots[-1]
             hfs_root.visible = False
-            switcher = Select(title="Review method", value="gaussian",
-                              options=[("gaussian", "Gaussian"),
-                                       ("hfs", "Hyperfine structure (HFS)")],
-                              width=270)
-            comparison = Div(width=1000)
-
             def switch(attr=None, old=None, new=None):
                 gaussian_root.visible = switcher.value == "gaussian"
                 hfs_root.visible = switcher.value == "hfs"
@@ -1318,7 +1320,6 @@ def create_inspection_server(
                 )
             switcher.on_change("value", switch)
             switch()
-            doc.add_root(row(switcher, comparison))
             doc.title = "Sc I Gaussian / HFS fitting reviews — local"
 
     class LocalResources(BokehTornado):
