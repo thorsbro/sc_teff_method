@@ -466,6 +466,20 @@ The API does not propagate measurement errors or fit a calibration confidence
 interval. Do not select a supposedly best subset after inspecting these RMSE
 values without separate selection validation.
 
+## Interactive HFS and Gaussian review
+
+The optional local Bokeh reviewer can now switch between the Gaussian and HFS
+profiles of the **same** source spectrum, retaining independent windows, masks,
+manual continuum adjustments and scientific acceptance decisions.
+
+Start it with `sc-teff inspect spectrum.csv --with-hfs` plus the normal explicit
+wavelength, continuum and metallicity declarations. Gaussian-only inspection
+remains the default. Save HFS and Gaussian reviews to distinct JSON files, or
+reproduce a saved HFS review headlessly with `sc-teff replay-hfs`.
+See the [dual-method interactive review guide](docs/hfs_interactive_review.md).
+HFS review is not a replacement for the independent method-specific frozen
+temperature calibrations. Numerical convergence is not scientific acceptance.
+
 ## Provenance, citation and scope
 
 The frozen coefficients are unchanged. The compact numerical export records
@@ -495,7 +509,7 @@ and HFS mixtures at run time, using invented parameters and fixed noise seeds.
 **No observational spectra, extracts, wavelength–flux arrays or observed spectral
 plots are included or used for development.** Committed spectral figures and the
 interface preview come from analytical examples only. FITS input, automatic continuum finding,
-higher-order continuum polynomials, interactive HFS review, rectangular-band
+higher-order continuum polynomials, rectangular-band
 measurements, stellar spectral synthesis, calibration refitting and new
 observational validation are outside scope.
 
