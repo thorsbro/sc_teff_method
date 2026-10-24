@@ -114,6 +114,11 @@ def test_local_dual_method_review_browser_and_independent_approvals(tmp_path):
                 assert source.read_bytes() == original_bytes
                 assert not errors, errors
                 assert not external, external
+            except Exception:
+                print("Local Bokeh server log:", "".join(lines[-80:]))
+                print("Visible page:", page.content()[:4000])
+                print("Browser errors:", errors)
+                raise
             finally:
                 browser.close()
         cmd = [sys.executable, "-m", "sc_teff_method.cli", "replay-hfs", str(source),
