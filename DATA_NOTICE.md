@@ -60,12 +60,11 @@ pattern. Missing-B assumptions are explicit; no fitted stellar constants or
 individual-star HFS measurements are distributed. Permissions for additional
 datasets or expanded source selections must be checked separately.
 
-## Spectral examples and excluded material
+## Spectral inputs and examples
 
-No observed spectral datasets are included. Example generators and tests use
-only analytical Gaussian/HFS equations, invented parameters and independently
-generated reproducible noise. Committed spectral figures are entirely
-synthetic. No observed spectra, cutouts, extracted wavelength–flux arrays,
-observed spectral plots, working catalogues or individual-star validation
-records are distributed. No IGRINS observational material or observational
-templates are used in development or verification.
+Users supply their own appropriately prepared spectra when applying the fitting
+tools. The original calibration spectra are not publicly distributed. The
+example spectra and diagnostic figures provided with this repository are
+synthetic, based on Gaussian and HFS profiles with reproducible noise where
+applicable. Permissions to redistribute underlying observations are separate
+from the software and calibration-data licences described above.
