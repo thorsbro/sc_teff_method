@@ -18,7 +18,7 @@ from .models import (
     TemperatureEstimate,
 )
 
-__version__ = "0.1.0"
+__version__ = "1.0.0"
 
 # Keep PR 1's measured-area API usable without the optional spectral libraries.
 _SPECTRAL_EXPORTS = {

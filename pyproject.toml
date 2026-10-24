@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sc-teff-method"
-version = "0.1.0"
+version = "1.0.0"
 description = "Frozen K-band Sc I Gaussian and HFS temperature calibrations for cool giants"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -14,7 +14,7 @@ license-files = ["LICENSE", "DATA_NOTICE.md"]
 dependencies = []
 keywords = ["astronomy", "stellar temperatures", "scandium", "calibration"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",

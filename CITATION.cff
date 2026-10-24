@@ -7,7 +7,7 @@ title: "sc_teff_method: K-band Sc I temperature calibration for cool giant stars
 authors:
   - family-names: Thorsbro
     given-names: Brian
-version: 0.1.0
+version: 1.0.0
 repository-code: "https://github.com/thorsbro/sc_teff_method"
 url: "https://github.com/thorsbro/sc_teff_method"
 license: MIT
