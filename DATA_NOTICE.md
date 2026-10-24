@@ -1,19 +1,28 @@
 # Software and calibration products
 
-The existing [MIT licence](LICENSE) covers the software. Its text is unchanged.
+The [MIT licence](LICENSE) covers the software, including the analytical example
+generators and tests. Calibration products and selected third-party atomic
+information are described separately below.
+
+## Frozen empirical calibration products
 
 The package contains a limited projection of the frozen
-`2026-10-05-nine-line-v1` calibration products: two sets of nine Gaussian
-coefficients and two separately fitted sets of nine HFS coefficients, marginal
-empirical coverage and associated fixed-subset validation sample sizes, biases
-and RMSE values. Gaussian and HFS products have separate hash-checked package
-data and provenance. See [Gaussian provenance](docs/provenance.md) and
+`2026-10-05-nine-line-v1` Gaussian and HFS calibration products:
+two configurations per method (with and without [Fe/H]), each with coefficients
+for all nine Sc I lines. The products also include
+marginal empirical coverage and aggregate fixed-subset validation sample sizes,
+biases and RMSE values. Gaussian and HFS products have separate hash-checked
+package data and provenance. See [Gaussian provenance](docs/provenance.md) and
 [HFS calibration provenance](docs/hfs_calibration_provenance.md).
 
-No additional data licence, redistribution rights for underlying observations,
-or permissions from co-authors are asserted here. Confirm the appropriate
-attribution and data terms with the authors before a separate data release or
-archive deposit. This PR does not create a release or deposit.
+These numerical calibration products were derived from the collaboration's
+scientific research and are already publicly accessible in this repository.
+Their separate licensing and attribution terms have not yet been finalised.
+Additional calibration-data redistribution permissions and attribution
+arrangements remain to be confirmed with the relevant authors or rights holders
+before a formal data release or archive deposit. No new licence, including
+CC BY 4.0, is assigned to the calibration products here; permissions from all
+co-authors and redistribution rights for underlying observations are not asserted.
 
 ## Selected third-party HFS atomic data
 
@@ -41,9 +50,8 @@ of the published rounded strengths as in the frozen reference, and conversion
 to relative offsets around the public canonical air wavelengths. The selected
 published Table 4 positions are comparison metadata, not the production A+B
 pattern. Missing-B assumptions are explicit; no fitted stellar constants or
-individual-star HFS measurements are distributed. No broader permission for
-additional datasets or expanded source selections is asserted; retain
-TODO/VERIFY for any further required author or data permissions.
+individual-star HFS measurements are distributed. Permissions for additional
+datasets or expanded source selections must be checked separately.
 
 ## Spectral examples and excluded material
 

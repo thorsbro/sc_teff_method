@@ -4,8 +4,9 @@ Calculate effective temperatures of cool giant stars from K-band Sc I Gaussian
 or hyperfine-structure (HFS) line areas, supplied directly or fitted to your
 continuum-normalised spectrum. Each measurement method has its own frozen
 **5 October 2026 nine-line calibration** on the Nandakumar et al. (2023)
-temperature scale. The measured-area API needs only Python 3.11 or later;
-optional spectrum fitting uses NumPy, SciPy and Matplotlib.
+temperature scale, with separate configurations with and without [Fe/H]
+(four configurations in total). The measured-area API needs only Python 3.11 or
+later; optional spectrum fitting uses NumPy, SciPy and Matplotlib.
 
 Supply any non-empty subset of `line1` through `line9`. Each line gives a
 temperature; the combined estimate is their **unweighted mean**. The main method
@@ -34,8 +35,7 @@ python -m pip install ".[inspect]"
 ```
 
 The installed package includes its calibration and validation tables. It runs
-offline and needs no access to the private paper repository. This PR does not
-publish a PyPI package, GitHub release or archive deposit.
+offline and needs no access to the private paper repository.
 
 ## Fit HFS profiles and use the HFS calibration
 
@@ -113,14 +113,15 @@ This analytical example establishes software correctness. Continuum placement,
 blends, saturation, resolving power and measurement compatibility can introduce
 systematic differences in astronomical use. Formal HFS covariance includes
 amplitude-width covariance but excludes those systematics and calibration
-uncertainty. Interactive HFS review is deferred; `inspect` and saved Gaussian
-reviews retain their Gaussian meaning.
+uncertainty. Interactive HFS review and saved-review replay are available;
+see [Interactive HFS and Gaussian review](#interactive-hfs-and-gaussian-review).
 
 ## Inspect, accept and reproduce line fits
 
 The optional Bokeh interface serves interactive plots and Python callbacks from
 **127.0.0.1**, using local assets without cloud services, telemetry, uploads or a
-CDN. It reuses the existing Gaussian fitter and frozen calibration APIs.
+CDN. By default it uses the Gaussian fitter and frozen Gaussian calibration APIs;
+`--with-hfs` adds an independent HFS reviewer, as described below.
 
 ```bash
 python examples/demo_interactive_review.py --output-dir review-demo
@@ -250,7 +251,7 @@ scientific acceptance. Failed or unavailable fits cannot contribute; converged
 fits with numerical quality flags are excluded by default. After inspection,
 `--include-warned` explicitly permits those flagged fits. `--exclude-line line4`
 always excludes a selected line. Calibration extrapolation warnings remain
-separate and retain the PR 1 behaviour described below.
+separate, as described below.
 
 No velocity correction is applied unless you supply `--rv-kms`. Positive velocity
 means recession/redshift: `lambda_rest = lambda_input / sqrt((1+v/c)/(1-v/c))`,
@@ -283,9 +284,10 @@ write_fit_outputs(analysis, "my_synthetic_fit", spectrum_label="Analytical synth
 `load_spectrum(...)` returns a prepared `Spectrum`; pass it to
 `estimate_from_spectrum(...)` without applying RV twice. The workflow supports
 both frozen configurations, with explicit [Fe/H] required only by
-`nandakumar_feh`. Any surviving non-empty subset is calibrated through the unchanged
-PR 1 API. If none survives, the temperature and validation result remain missing;
-the CLI still saves diagnostics and returns exit code 3 (invalid input returns 2).
+`nandakumar_feh`. Any surviving non-empty subset is calibrated through the
+measured-area API. If none survives, the temperature and validation result remain
+missing; the CLI still saves diagnostics and returns exit code 3 (invalid input
+returns 2).
 
 Default windows are **provisional symmetric ±3 Å intervals**, with continuum fixed
 to one, bounded amplitude/centre/width and unweighted least squares. They are not
@@ -349,7 +351,9 @@ These validation statistics are **not an error bar** on the example temperature.
 Bias means Sc I prediction minus reference temperature. RMSE is the root mean
 square of those residuals, including the bias.
 
-Choose the calibration that matches the information available:
+Choose the calibration that matches the measurement method and information
+available. Gaussian and HFS each have the following two configurations, with
+separate coefficients and validation products for each method:
 
 | Configuration | Frozen equation for each line | [Fe/H] input |
 | --- | --- | --- |
@@ -430,8 +434,9 @@ new instrument, measurement procedure or stellar population.
 
 ## Subset validation and uncertainty
 
-The package contains all **511 non-empty fixed subsets**, for both
-configurations, two scopes and two cohorts: 4,088 validation records.
+For each of Gaussian and HFS, the package contains all **511 non-empty fixed
+subsets**, for both configurations, two scopes and two cohorts: 4,088 validation
+records per method. The Gaussian validation details follow.
 
 | Option | Meaning |
 | --- | --- |
@@ -468,22 +473,39 @@ values without separate selection validation.
 
 ## Interactive HFS and Gaussian review
 
-The optional local Bokeh reviewer can now switch between the Gaussian and HFS
+The optional local Bokeh reviewer can switch between the Gaussian and HFS
 profiles of the **same** source spectrum, retaining independent windows, masks,
 manual continuum adjustments and scientific acceptance decisions.
 
-Start it with `sc-teff inspect spectrum.csv --with-hfs` plus the normal explicit
-wavelength, continuum and metallicity declarations. Gaussian-only inspection
-remains the default. Save HFS and Gaussian reviews to distinct JSON files, or
-reproduce a saved HFS review headlessly with `sc-teff replay-hfs`.
+Using the analytical `hfs-demo/spectrum.csv` generated above:
+
+```bash
+sc-teff inspect hfs-demo/spectrum.csv --with-hfs \
+  --delimiter , --header --wavelength-column wavelength --flux-column flux \
+  --uncertainty-column uncertainty --mask-column exclude \
+  --wavelength-unit angstrom --wavelength-frame air --continuum-normalised \
+  --feh -0.2 --save-review gaussian-review.json --save-hfs-review hfs-review.json
+```
+
+Gaussian-only inspection remains the default. Save HFS and Gaussian reviews to
+distinct JSON files. Resume both reviews or reproduce the accepted HFS result
+without a browser:
+
+```bash
+sc-teff inspect hfs-demo/spectrum.csv --with-hfs \
+  --review-file gaussian-review.json --hfs-review-file hfs-review.json
+sc-teff replay-hfs hfs-demo/spectrum.csv --review-file hfs-review.json \
+  --output-dir reproduced-hfs
+```
+
 See the [dual-method interactive review guide](docs/hfs_interactive_review.md).
 HFS review is not a replacement for the independent method-specific frozen
 temperature calibrations. Numerical convergence is not scientific acceptance.
 
 ## Provenance, citation and scope
 
-The frozen coefficients are unchanged. The compact numerical export records
-the source snapshot, source revisions, SHA-256 hashes and projection rules in
+The compact numerical export records the source snapshot, source revisions,
+SHA-256 hashes and projection rules in
 [docs/provenance.md](docs/provenance.md) and the packaged `provenance.json`.
 The two Gaussian and two HFS configurations have separate numerical exports and
 validation summaries. The HFS projection and selected atomic data are documented
@@ -494,8 +516,9 @@ in [the HFS provenance guide](docs/hfs_calibration_provenance.md) and
 author. The reference temperature scale is described by
 [Nandakumar et al. (2023), A&A 675, A23](https://doi.org/10.1051/0004-6361/202346149).
 That reference describes the temperature scale, not a new DOI for this Sc I
-calibration. The final calibration-paper citation and public data-release
-identifier remain TODO/VERIFY; neither is invented here.
+calibration. The scientific manuscript has no DOI yet; its citation can be added
+once the bibliographic metadata are finalised. A public data-release identifier
+can be added when available.
 
 The [MIT software licence](LICENSE) is retained. See
 [DATA_NOTICE.md](DATA_NOTICE.md) for the limited numerical export and pending
@@ -503,8 +526,8 @@ calibration-data attribution/permission checks and separate CC BY 4.0 atomic-dat
 attribution. No additional calibration-data licence or co-author permission is
 assumed.
 
-The original measured-area API and its approved frozen numerical products are
-preserved. New spectrum examples and tests generate analytical Gaussian profiles
+The measured-area API uses the frozen numerical products described above.
+Spectrum examples and tests generate analytical Gaussian profiles
 and HFS mixtures at run time, using invented parameters and fixed noise seeds.
 **No observational spectra, extracts, wavelength–flux arrays or observed spectral
 plots are included or used for development.** Committed spectral figures and the
