@@ -1314,10 +1314,21 @@ def create_inspection_server(
                 comparison.text = (
                     f"<b>Gaussian reviewed Teff:</b> {gv} · "
                     f"<b>HFS reviewed Teff:</b> {hv} · "
-                    "Independent methods, fitting controls and approvals. "
-                    "HFS strict-domain applicability requires separately measured "
+                    "Independent method-specific controls and approvals. "
+                    "Frozen HFS strict-domain statistics require separately measured "
                     "Gaussian anchors, not HFS areas."
                 )
+
+            # The comparison updates after every accepted/rejected/refitted line,
+            # not only after the user switches methods.
+            for item in (controller, hfs_controller):
+                original_refresh = item.refresh_results
+
+                def refresh_and_compare(refresh=original_refresh):
+                    refresh()
+                    switch()
+
+                item.refresh_results = refresh_and_compare
             switcher.on_change("value", switch)
             switch()
             doc.title = "Sc I Gaussian / HFS fitting reviews — local"
