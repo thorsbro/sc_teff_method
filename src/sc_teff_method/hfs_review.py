@@ -18,14 +18,22 @@ from ._data import CALIBRATION_ID, LINE_IDS
 from .continuum import ContinuumCorrection, ContinuumOptions, apply_continuum
 from .fitting import GaussianParameters
 from .hfs_calibration import estimate_hfs_temperature, hfs_subset_performance
-from .hfs_data import ATOMIC_ID, HFS_DATASET_ID
+from .hfs_data import HFS_DATASET_ID
 from .hfs_fitting import HFSFitOptions, fit_hfs_lines
 from .hfs_workflow import estimate_hfs_from_spectrum
 from .measurements import LineAreas
 from .outputs import _plain
 from .review import (
-    LineControls, LineDecision, _identity, _prepared_digest, _snapshot,
-    _snapshot_matches, _valid_fit, _strict_object, _reject_constant, _text,
+    LineControls,
+    LineDecision,
+    _identity,
+    _prepared_digest,
+    _reject_constant,
+    _snapshot,
+    _snapshot_matches,
+    _strict_object,
+    _text,
+    _valid_fit,
 )
 from .spectrum import Spectrum
 
@@ -119,7 +127,8 @@ class HFSReviewSession:
         if any(control.continuum.active for control in self._controls.values()):
             uncorrected = fit_hfs_lines(
                 spectrum, windows=windows, initial_parameters=initial_parameters,
-                excluded_regions=excluded_regions, excluded_lines=excluded_lines, options=self.options,
+                excluded_regions=excluded_regions, excluded_lines=excluded_lines,
+                options=self.options,
             )
             self._uncorrected_fits.update(uncorrected)
         self._decisions = {
@@ -236,7 +245,8 @@ class HFSReviewSession:
         kwargs = dict(configuration=self.configuration, feh=self.feh,
                       reference_temperature_k=self.reference_temperature_k,
                       gaussian_anchor_areas=self.gaussian_anchor_areas)
-        diagnostic = estimate_hfs_temperature(LineAreas(usable, "hfs"), **kwargs) if usable else None
+        diagnostic = (estimate_hfs_temperature(LineAreas(usable, "hfs"), **kwargs)
+                      if usable else None)
         final = estimate_hfs_temperature(LineAreas(accepted, "hfs"), **kwargs) if accepted else None
         performance = (hfs_subset_performance(
             accepted, configuration=self.configuration, scope=self.validation_scope,
@@ -253,9 +263,14 @@ class HFSReviewSession:
             "User-selected continuum and line subsets are not validated by frozen RMSE.",
         ]
         if self.gaussian_anchor_areas is None:
-            notes.append("Gaussian anchor areas were not supplied; strict-domain applicability is unknown.")
+            notes.append(
+                "Gaussian anchors were not supplied; strict-domain applicability is unknown."
+            )
         if any(c.continuum.active for c in self._controls.values()):
-            notes.append("HFS continuum corrections are user controlled; formal errors exclude placement uncertainty.")
+            notes.append(
+                "HFS continuum corrections are user controlled; "
+                "formal errors exclude placement uncertainty."
+            )
         if not accepted:
             notes.append("No HFS fits are accepted; reviewed temperature is missing.")
         return replace(
@@ -377,7 +392,8 @@ class HFSReviewSession:
             raise ValueError("Review destination would overwrite an input/configuration file")
         if path.exists() and not overwrite:
             raise FileExistsError(path)
-        if path.exists() and hashlib.sha256(path.read_bytes()).hexdigest() == self._identity["sha256"]:
+        if (path.exists() and
+                hashlib.sha256(path.read_bytes()).hexdigest() == self._identity["sha256"]):
             raise ValueError("Review destination contains the protected source spectrum")
         payload = json.dumps(self.to_dict(), allow_nan=False, indent=2, ensure_ascii=False) + "\n"
         path.parent.mkdir(parents=True, exist_ok=True)
