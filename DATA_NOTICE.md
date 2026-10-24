@@ -16,13 +16,19 @@ package data and provenance. See [Gaussian provenance](docs/provenance.md) and
 [HFS calibration provenance](docs/hfs_calibration_provenance.md).
 
 These numerical calibration products were derived from the collaboration's
-scientific research and are already publicly accessible in this repository.
-Their separate licensing and attribution terms have not yet been finalised.
-Additional calibration-data redistribution permissions and attribution
-arrangements remain to be confirmed with the relevant authors or rights holders
-before a formal data release or archive deposit. No new licence, including
-CC BY 4.0, is assigned to the calibration products here; permissions from all
-co-authors and redistribution rights for underlying observations are not asserted.
+scientific research and are publicly available in this repository. With the
+agreement of the co-authors, the released Gaussian and HFS calibration
+coefficients, empirical coverage summaries, aggregate fixed-subset validation
+statistics, and associated numerical-data provenance are licensed under the
+[Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/).
+
+Users may share and adapt these released calibration products under CC BY 4.0,
+provided they credit the Sc I calibration authors, identify this repository as
+the source, link to the licence, and indicate any changes. Please also cite the
+accompanying scientific paper once its final citation becomes available.
+The CC BY 4.0 grant for these calibration products does not extend to the
+underlying observational spectra or other third-party observational data.
+The software remains licensed separately under MIT.
 
 ## Selected third-party HFS atomic data
 
@@ -34,8 +40,9 @@ The article identifies its publication under
 [Creative Commons Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/);
 the attribution and licence statement are also present in the
 [author-hosted article](https://tsapps.nist.gov/publication/get_pdf.cfm?pub_id=929570).
-This third-party attribution is separate from the project's MIT software licence
-and does not establish a licence for the stellar calibration products above.
+This third-party attribution and licence are independent of both the MIT
+software licence and the CC BY 4.0 licence granted for the empirical calibration
+products above.
 
 Only the nine-transition selection needed by this method is included: ten
 primary electronic levels and 133 component assignments. The full publisher
