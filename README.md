@@ -34,8 +34,10 @@ For local browser inspection and manual review:
 python -m pip install ".[inspect]"
 ```
 
-The installed package includes its calibration and validation tables. It runs
-offline and needs no access to the private paper repository.
+The installed package includes its calibration and validation tables and runs
+offline. Users supply their own continuum-normalised spectra for observational
+applications. The spectra used to establish the calibration are not publicly
+distributed.
 
 ## Fit HFS profiles and use the HFS calibration
 
@@ -314,8 +316,8 @@ flags, complete defaults, configuration examples and synthetic verification.
 
 ![Entirely analytical synthetic diagnostic figure](docs/images/synthetic_diagnostics.png)
 
-This illustrative figure uses invented Gaussian profiles, noise-free mathematical
-blends and an explicit pixel exclusion. It contains no observational spectrum.
+This illustrative figure uses synthetic Gaussian profiles, blends and an
+explicit pixel exclusion.
 
 ## Use your measured areas
 
@@ -530,19 +532,14 @@ statistics and associated numerical-data provenance are available under
 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Selected third-party
 HFS atomic information retains its independently granted CC BY 4.0 licence and
 attribution to Hala & Nave (2022). See [DATA_NOTICE.md](DATA_NOTICE.md) for
-the applicable terms and attribution requirements. Underlying observational
-spectra and other third-party observational data are not distributed or licensed
-by this repository.
+the applicable terms and attribution requirements.
 
 The measured-area API uses the frozen numerical products described above.
-Spectrum examples and tests generate analytical Gaussian profiles
-and HFS mixtures at run time, using invented parameters and fixed noise seeds.
-**No observational spectra, extracts, wavelength–flux arrays or observed spectral
-plots are included or used for development.** Committed spectral figures and the
-interface preview come from analytical examples only. FITS input, automatic continuum finding,
-higher-order continuum polynomials, rectangular-band
-measurements, stellar spectral synthesis, calibration refitting and new
-observational validation are outside scope.
+Synthetic spectra and diagnostic figures illustrate the fitting and review
+workflows. Users can apply these methods to their own suitably prepared
+observations. FITS input, automatic continuum finding, higher-order continuum
+polynomials, rectangular-band measurements, stellar spectral synthesis,
+calibration refitting and new observational validation are outside scope.
 
 ## Development
 
@@ -553,12 +550,12 @@ python -m ruff check .
 python -m build
 ```
 
-Public tests run without the private repository. They include fixed regressions
-from the reference estimator, every subset identity and option combination,
-all subset temperature means, input validation, boundary warnings and data
-integrity checks. GitHub Actions builds distributions and runs the tests and
-examples against the installed wheel on Python 3.11 and 3.14. The spectral tests
-use analytical data exclusively and check Gaussian parameter/area recovery,
+The test suite includes fixed regressions from the reference estimator, every
+subset identity and option combination, all subset temperature means, input
+validation, boundary warnings and data integrity checks. GitHub Actions builds
+distributions and runs the tests and examples against the installed wheel on
+Python 3.11 and 3.14. Synthetic spectral tests check Gaussian parameter/area
+recovery,
 independent covariance calculations, both RV signs, masks/gaps/failed fits,
 inclusion policies, CLI output precision and overwrite protection. Install the
 `dev` extra to run both the original and spectral tests. With the base `test`
