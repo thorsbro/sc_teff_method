@@ -87,6 +87,7 @@ class _RegionPlot:
         self.removed = ColumnDataSource({"x": [], "y": []})
         self.model = ColumnDataSource({"x": [], "y": []})
         self.continuum = ColumnDataSource({"x": [], "y": []})
+        self.hfs_components = ColumnDataSource({"x": [], "lower": [], "upper": []})
         self.anchors = ColumnDataSource({"x": [], "y": []})
         self.residual_used = ColumnDataSource({"x": [], "y": []})
         self.residual_removed = ColumnDataSource({"x": [], "y": []})
@@ -111,6 +112,8 @@ class _RegionPlot:
         used = self.profile.scatter("x", "y", source=self.used, color="#247397", size=3)
         self.profile.scatter("x", "y", source=self.removed, color="#bf3f39", marker="x", size=6)
         self.profile.line("x", "y", source=self.model, color="#d8871d", line_width=2)
+        self.profile.segment(x0="x", y0="lower", x1="x", y1="upper",
+                             source=self.hfs_components, color="#25835e", line_alpha=0.55)
         self.profile.line("x", "y", source=self.continuum, color="#33845a",
                           line_width=2, line_dash="dashed")
         self.profile.scatter("x", "y", source=self.anchors, color="#33845a",
@@ -202,17 +205,47 @@ class _RegionPlot:
         }
         self.profile.x_range.start, self.profile.x_range.end = lower-padding, upper+padding
         if fit.parameters is not None:
+            if getattr(fit, "measurement_method", "gaussian") == "hfs":
+                from .hfs import hfs_absorption
+                from .hfs_data import load_hfs_atomic_data
+
+                definition = load_hfs_atomic_data()
+                reference = definition.lines[fit.line_id]
+
+                def profile_fn(values):
+                    params = fit.parameters
+                    return hfs_absorption(
+                        values, params.amplitude, params.centre_air_angstrom,
+                        params.sigma_angstrom, definition.components[fit.line_id],
+                        parent_wavelength=reference.wavelength_air_angstrom,
+                        cog_wavenumber_cm1=reference.cog_wavenumber_cm1,
+                    )
+
+                centres = fit.parameters.centre_air_angstrom + np.asarray(
+                    fit.component_offsets_angstrom
+                )
+                self.hfs_components.data = {
+                    "x": centres, "lower": np.full(len(centres), ymax-0.13*(ymax-ymin)),
+                    "upper": np.full(len(centres), ymax-0.02*(ymax-ymin)),
+                }
+            else:
+                self.hfs_components.data = {"x": [], "lower": [], "upper": []}
+
+                def profile_fn(values):
+                    return gaussian_absorption(values, fit.parameters)
+
             model_x = np.linspace(lower, upper, 350)
-            self.model.data = {"x": model_x, "y": gaussian_absorption(model_x, fit.parameters)}
+            self.model.data = {"x": model_x, "y": profile_fn(model_x)}
             self.residual_used.data = {
-                "x": x[used], "y": y[used]-gaussian_absorption(x[used], fit.parameters),
+                "x": x[used], "y": y[used]-profile_fn(x[used]),
             }
             keep_removed = removed & np.isfinite(y)
             self.residual_removed.data = {
                 "x": x[keep_removed],
-                "y": y[keep_removed]-gaussian_absorption(x[keep_removed], fit.parameters),
+                "y": y[keep_removed]-profile_fn(x[keep_removed]),
             }
         else:
+            self.hfs_components.data = {"x": [], "lower": [], "upper": []}
             self.model.data = {"x": [], "y": []}
             self.residual_used.data = {"x": [], "y": []}
             self.residual_removed.data = {"x": [], "y": []}
@@ -927,8 +960,11 @@ class ReviewDocument:
         estimate = self.session.reviewed
         velocity = self.session.spectrum.rv_kms
         rv = "not applied" if velocity is None else f"{velocity:+.3f} km/s"
+        hfs = getattr(self.session, "measurement_source", "gaussian") == "hfs"
         self.title.text = (
-            "<h1 style='margin:0;font-size:24px'>Sc I line-fitting review</h1>"
+            "<h1 style='margin:0;font-size:24px'>"
+            + ("Sc I HFS line-fitting review" if hfs else "Sc I Gaussian line-fitting review")
+            + "</h1>"
             f"<p style='margin:5px 0;color:#526171'>{_escape(self.spectrum_label)} · "
             f"{_escape(self.session.input_identity['filename'])} · "
             f"{_escape(self.session.configuration)} · [Fe/H] {_number(self.session.feh)} · "
@@ -1020,11 +1056,19 @@ class ReviewDocument:
         before = self.session.uncorrected_fits[line]
         before_temperature = None
         if before.area_angstrom is not None and before.area_angstrom > 0:
-            before_temperature = estimate_temperature(
-                {line: before.area_angstrom}, configuration=self.session.configuration,
-                feh=self.session.feh,
-                reference_temperature_k=self.session.reference_temperature_k,
-            ).temperature_k
+            if hfs:
+                from .hfs_calibration import estimate_hfs_temperature
+                before_temperature = estimate_hfs_temperature(
+                    {line: before.area_angstrom}, configuration=self.session.configuration,
+                    feh=self.session.feh,
+                    reference_temperature_k=self.session.reference_temperature_k,
+                ).temperature_k
+            else:
+                before_temperature = estimate_temperature(
+                    {line: before.area_angstrom}, configuration=self.session.configuration,
+                    feh=self.session.feh,
+                    reference_temperature_k=self.session.reference_temperature_k,
+                ).temperature_k
         status += (
             f"<br/><b>Before correction:</b> W {_number(before.area_angstrom, 8)} Å; "
             f"line Teff {_number(before_temperature, 7)} K. "
@@ -1114,7 +1158,11 @@ class ReviewDocument:
 
     def load_review(self) -> None:
         try:
-            self.session = ReviewSession.load(
+            review_class = ReviewSession
+            if getattr(self.session, "measurement_source", "gaussian") == "hfs":
+                from .hfs_review import HFSReviewSession
+                review_class = HFSReviewSession
+            self.session = review_class.load(
                 self.session.spectrum, self.widgets["review_path"].value,
                 input_identity=self.session.input_identity,
             )
@@ -1148,7 +1196,11 @@ class ReviewDocument:
             current_review = Path(self.widgets["review_path"].value).expanduser()
             if current_review.exists():
                 paths.add(current_review.resolve())
-            write_review_outputs(
+            writer = write_review_outputs
+            if getattr(self.session, "measurement_source", "gaussian") == "hfs":
+                from .hfs_review_exports import write_hfs_review_outputs
+                writer = write_hfs_review_outputs
+            writer(
                 self.session, self.widgets["output_dir"].value,
                 overwrite=bool(self.widgets["overwrite"].active),
                 plot_format=self.widgets["plot_format"].value,
@@ -1189,13 +1241,20 @@ def create_inspection_server(
     protected_paths: Iterable[str | Path] = (),
     export_protected_paths: Iterable[str | Path] = (),
     spectrum_label: str = "Input spectrum",
+    hfs_session=None,
+    hfs_review_path: str | Path = "hfs-review.json",
+    hfs_output_dir: str | Path = "hfs-review-results",
+    hfs_export_protected_paths: Iterable[str | Path] = (),
 ) -> BaseServer:
-    """Create a loopback-only server with local assets and independent tab state."""
+    """Create a loopback-only server with independently reviewed methods."""
     if isinstance(port, bool) or not isinstance(port, int) or not 0 <= port <= 65535:
         raise ValueError("port must be an integer from 0 through 65535")
     baseline = {
         "payload": session.to_dict(), "review_path": review_path,
         "export_paths": tuple(export_protected_paths),
+        "hfs_payload": hfs_session.to_dict() if hfs_session is not None else None,
+        "hfs_review_path": hfs_review_path,
+        "hfs_export_paths": tuple(hfs_export_protected_paths),
     }
 
     def saved(controller):
@@ -1203,16 +1262,64 @@ def create_inspection_server(
         baseline["review_path"] = controller.widgets["review_path"].value
         baseline["export_paths"] = tuple(controller.export_protected_paths)
 
+    def saved_hfs(controller):
+        baseline["hfs_payload"] = controller.session.to_dict()
+        baseline["hfs_review_path"] = controller.widgets["review_path"].value
+        baseline["hfs_export_paths"] = tuple(controller.export_protected_paths)
+
     def make_document(doc):
         local_session = ReviewSession.from_dict(
             session.spectrum, baseline["payload"], input_identity=session.input_identity,
         )
         controller = build_review_document(
             doc, local_session, review_path=baseline["review_path"], output_dir=output_dir,
-            protected_paths=protected_paths, export_protected_paths=baseline["export_paths"],
+            protected_paths=(*protected_paths, hfs_review_path),
+            export_protected_paths=baseline["export_paths"],
             spectrum_label=spectrum_label,
         )
         controller._persisted = saved
+        if hfs_session is not None:
+            from .hfs_review import HFSReviewSession
+
+            gaussian_root = doc.roots[-1]
+            local_hfs = HFSReviewSession.from_dict(
+                session.spectrum, baseline["hfs_payload"],
+                input_identity=session.input_identity,
+            )
+            hfs_controller = build_review_document(
+                doc, local_hfs, review_path=baseline["hfs_review_path"],
+                output_dir=hfs_output_dir,
+                protected_paths=(*protected_paths, baseline["review_path"]),
+                export_protected_paths=baseline["hfs_export_paths"],
+                spectrum_label=spectrum_label,
+            )
+            hfs_controller._persisted = saved_hfs
+            hfs_root = doc.roots[-1]
+            hfs_root.visible = False
+            switcher = Select(title="Review method", value="gaussian",
+                              options=[("gaussian", "Gaussian"),
+                                       ("hfs", "Hyperfine structure (HFS)")],
+                              width=270)
+            comparison = Div(width=1000)
+
+            def switch(attr=None, old=None, new=None):
+                gaussian_root.visible = switcher.value == "gaussian"
+                hfs_root.visible = switcher.value == "hfs"
+                g = controller.session.reviewed.temperature
+                h = hfs_controller.session.reviewed.temperature
+                gv = "pending" if g is None else f"{g.temperature_k:.2f} K"
+                hv = "pending" if h is None else f"{h.temperature_k:.2f} K"
+                comparison.text = (
+                    f"<b>Gaussian reviewed Teff:</b> {gv} · "
+                    f"<b>HFS reviewed Teff:</b> {hv} · "
+                    "Independent methods, fitting controls and approvals. "
+                    "HFS strict-domain applicability requires separately measured "
+                    "Gaussian anchors, not HFS areas."
+                )
+            switcher.on_change("value", switch)
+            switch()
+            doc.add_root(row(switcher, comparison))
+            doc.title = "Sc I Gaussian / HFS fitting reviews — local"
 
     class LocalResources(BokehTornado):
         def resources(self, absolute_url=None):
