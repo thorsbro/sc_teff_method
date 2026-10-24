@@ -84,7 +84,7 @@ def test_local_dual_method_review_browser_and_independent_approvals(tmp_path):
             page.on("pageerror", lambda exc: errors.append(str(exc)))
             try:
                 page.goto(url, wait_until="networkidle", timeout=45000)
-                page.locator(".profile_method select").select_option("hfs")
+                page.locator(".profile_method select").select_option("HFS")
                 assert page.get_by_text("Sc I HFS line-fitting review").is_visible()
                 page.locator(".accept_line button:visible").click()
                 page.wait_for_function(
@@ -100,7 +100,7 @@ def test_local_dual_method_review_browser_and_independent_approvals(tmp_path):
                 assert payload["measurement_source"] == "hfs"
                 assert payload["lines"]["line1"]["decision"]["state"] == "accepted"
 
-                page.locator(".profile_method select").select_option("gaussian")
+                page.locator(".profile_method select").select_option("Gaussian")
                 assert page.get_by_text("Sc I Gaussian line-fitting review").is_visible()
                 page.locator(".accept_line button:visible").click()
                 page.locator(".save_review button:visible").click()
@@ -108,7 +108,7 @@ def test_local_dual_method_review_browser_and_independent_approvals(tmp_path):
                 assert g_review.exists()
                 g_data = json.loads(g_review.read_text())
                 assert g_data["lines"]["line1"]["decision"]["state"] == "accepted"
-                page.locator(".profile_method select").select_option("hfs")
+                page.locator(".profile_method select").select_option("HFS")
                 assert page.get_by_text("Sc I HFS line-fitting review").is_visible()
                 assert h_review.exists()
                 assert source.read_bytes() == original_bytes
