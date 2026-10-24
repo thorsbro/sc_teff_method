@@ -1304,7 +1304,7 @@ def create_inspection_server(
             hfs_controller._persisted = saved_hfs
             hfs_root = doc.roots[-1]
             hfs_root.visible = False
-            def switch(attr=None, old=None, new=None):
+            def switch(attr, old, new):
                 gaussian_root.visible = switcher.value == "gaussian"
                 hfs_root.visible = switcher.value == "hfs"
                 g = controller.session.reviewed.temperature
@@ -1326,11 +1326,11 @@ def create_inspection_server(
 
                 def refresh_and_compare(refresh=original_refresh):
                     refresh()
-                    switch()
+                    switch("value", None, switcher.value)
 
                 item.refresh_results = refresh_and_compare
             switcher.on_change("value", switch)
-            switch()
+            switch("value", None, switcher.value)
             doc.title = "Sc I Gaussian / HFS fitting reviews — local"
 
     class LocalResources(BokehTornado):
