@@ -89,14 +89,13 @@ def test_local_dual_method_review_browser_and_independent_approvals(tmp_path):
                     page.get_by_text("Sc I HFS line-fitting review")
                 ).to_be_visible(timeout=15000)
                 page.locator(".accept_line button:visible").click()
-                page.wait_for_function(
-                    "() => [...document.querySelectorAll('.reviewed_summary')]"
-                    ".some(e => e.offsetParent !== null && "
-                    "e.textContent.includes('Accepted lines (1)'))",
-                    timeout=30000,
-                )
+                playwright.expect(
+                    page.locator(".reviewed_summary:visible")
+                ).to_contain_text("Accepted lines (1)", timeout=15000)
                 page.locator(".save_review button:visible").click()
-                page.wait_for_timeout(300)
+                playwright.expect(page.locator(".review_message:visible")).to_contain_text(
+                    "saved", timeout=15000
+                )
                 assert h_review.exists()
                 payload = json.loads(h_review.read_text())
                 assert payload["measurement_source"] == "hfs"
@@ -108,7 +107,9 @@ def test_local_dual_method_review_browser_and_independent_approvals(tmp_path):
                 ).to_be_visible(timeout=15000)
                 page.locator(".accept_line button:visible").click()
                 page.locator(".save_review button:visible").click()
-                page.wait_for_timeout(300)
+                playwright.expect(page.locator(".review_message:visible")).to_contain_text(
+                    "saved", timeout=15000
+                )
                 assert g_review.exists()
                 g_data = json.loads(g_review.read_text())
                 assert g_data["lines"]["line1"]["decision"]["state"] == "accepted"
