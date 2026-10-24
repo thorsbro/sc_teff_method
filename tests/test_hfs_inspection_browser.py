@@ -114,7 +114,9 @@ def test_local_dual_method_review_browser_and_independent_approvals(tmp_path):
                 g_data = json.loads(g_review.read_text())
                 assert g_data["lines"]["line1"]["decision"]["state"] == "accepted"
                 page.locator(".profile_method select").select_option("HFS")
-                assert page.get_by_text("Sc I HFS line-fitting review").is_visible()
+                playwright.expect(
+                    page.get_by_text("Sc I HFS line-fitting review")
+                ).to_be_visible(timeout=15000)
                 assert h_review.exists()
                 assert source.read_bytes() == original_bytes
                 assert not errors, errors
