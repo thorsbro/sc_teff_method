@@ -1,4 +1,5 @@
 """HFS method-specific review tests use only analytical synthetic HFS profiles."""
+# ruff: noqa: E402
 from __future__ import annotations
 
 import hashlib
