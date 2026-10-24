@@ -39,6 +39,8 @@ _SPECTRAL_EXPORTS = {
     "HFSSpectralEstimate": "hfs_workflow", "estimate_hfs_from_spectrum": "hfs_workflow",
     "fit_hfs_spectrum": "hfs_workflow", "plot_hfs_diagnostics": "hfs_outputs",
     "write_hfs_outputs": "hfs_outputs",
+    "HFSReviewSession": "hfs_review", "read_hfs_review": "hfs_review",
+    "write_hfs_review_outputs": "hfs_review_exports",
 }
 
 
