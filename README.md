@@ -1,8 +1,8 @@
 # sc_teff_method
 
 Calculate effective temperatures of cool giant stars from K-band Sc I Gaussian
-line areas, either supplied directly or fitted to your continuum-normalised
-spectrum. This package applies the frozen
+or hyperfine-structure (HFS) line areas, supplied directly or fitted to your
+continuum-normalised spectrum. Each measurement method has its own frozen
 **5 October 2026 nine-line calibration** on the Nandakumar et al. (2023)
 temperature scale. The measured-area API needs only Python 3.11 or later;
 optional spectrum fitting uses NumPy, SciPy and Matplotlib.
@@ -36,6 +36,85 @@ python -m pip install ".[inspect]"
 The installed package includes its calibration and validation tables. It runs
 offline and needs no access to the private paper repository. This PR does not
 publish a PyPI package, GitHub release or archive deposit.
+
+## Fit HFS profiles and use the HFS calibration
+
+The optional `spectra` installation includes the fixed-component HFS engine.
+The adopted **`hala2022_ab_generated`** pattern uses Sc-45, I = 7/2, fixed
+laboratory A+B constants and 133 components across the nine lines. Only the
+common amplitude, parent centre and Gaussian component width are fitted.
+Component strengths sum to one; the full analytical area is
+`W_HFS = sqrt(2*pi) * amplitude * sigma`.
+
+```bash
+python examples/generate_hfs_spectrum.py --output-dir hfs-demo --case noise
+sc-teff fit-hfs hfs-demo/spectrum.csv \
+  --delimiter , --header --wavelength-column wavelength --flux-column flux \
+  --uncertainty-column uncertainty --mask-column exclude \
+  --wavelength-unit angstrom --wavelength-frame air --continuum-normalised \
+  --feh -0.2 --output-dir hfs-results --label "Analytical synthetic HFS spectrum"
+```
+
+The generator uses invented mathematical profiles and reproducible independent
+noise (seed 20261025), without observed templates. The command writes precise
+`summary.json`, all-nine `lines.csv` and `diagnostics.png`; `--plot-format both`
+also writes PDF. Inspect the total HFS profiles, component positions, residuals
+and quality flags before interpreting Teff. Existing output directories require
+explicit `--overwrite`, and source/configuration files remain protected.
+
+HFS fitting is **unweighted least squares**, matching the reference procedure.
+Supplied pixel uncertainties support diagnostics and are scaled with any manual
+continuum correction; they do not enable weighting. Numerical convergence is
+not scientific acceptance. Failed or unavailable fits never contribute, and
+flagged fits are excluded unless `--include-warned` is explicit.
+
+```python
+from sc_teff_method import fit_hfs_spectrum, write_hfs_outputs
+from sc_teff_method.hfs_synthetic import make_hfs_synthetic_spectrum
+
+toy = make_hfs_synthetic_spectrum("noise")
+result = fit_hfs_spectrum(
+    toy.wavelength_air_angstrom, toy.flux,
+    wavelength_unit="angstrom", wavelength_frame="air", continuum_normalised=True,
+    uncertainty=toy.uncertainty, mask=toy.mask, configuration="nandakumar_feh", feh=-0.2,
+)
+if result.temperature is not None:
+    print(result.temperature.temperature_k, result.included_line_ids)
+write_hfs_outputs(result, "my-hfs-results", spectrum_label="Analytical synthetic HFS")
+```
+
+For already measured HFS areas, use `estimate_hfs_temperature`,
+`get_hfs_calibration` and `hfs_subset_performance`. The original measured-area
+functions retain their Gaussian meaning. Method-labelled results prevent
+accidental cross-use; plain numerical dictionaries rely on your explicit choice
+of API. HFS areas must use HFS-specific coefficients. Identical frozen model-ID
+strings across the methods do not make their coefficients interchangeable.
+
+**Strict-domain validation uses separate Gaussian-anchor areas, not HFS areas.**
+Without a complete passing set of Gaussian anchors, applicability is unknown
+or false and is explicitly warned. A displayed frozen subset RMSE is not a
+claim of target applicability or a validation of new continuum choices,
+post-hoc selection or arbitrary instrumental conditions. The combined Teff
+remains the unweighted mean of included individual HFS temperatures.
+
+The Hala & Nave Table 4 positions behave approximately as A-only calculations
+for these nine transitions; production uses A+B positions. The positive-A
+assignment for line9 and explicit missing-B assumptions remain frozen. Selected
+third-party atomic data are attributed under CC BY 4.0, separately from the MIT
+software and pending calibration-data permissions. See the
+[HFS fitting guide](docs/hfs_fitting.md),
+[atomic definitions](docs/hfs_atomic_data.md),
+[HFS calibration provenance](docs/hfs_calibration_provenance.md) and
+[numerical verification](docs/hfs_verification.md).
+
+![Entirely analytical nine-line HFS diagnostic figure](docs/images/synthetic_hfs_diagnostics.png)
+
+This analytical example establishes software correctness. Continuum placement,
+blends, saturation, resolving power and measurement compatibility can introduce
+systematic differences in astronomical use. Formal HFS covariance includes
+amplitude-width covariance but excludes those systematics and calibration
+uncertainty. Interactive HFS review is deferred; `inspect` and saved Gaussian
+reviews retain their Gaussian meaning.
 
 ## Inspect, accept and reproduce line fits
 
@@ -392,7 +471,10 @@ values without separate selection validation.
 The frozen coefficients are unchanged. The compact numerical export records
 the source snapshot, source revisions, SHA-256 hashes and projection rules in
 [docs/provenance.md](docs/provenance.md) and the packaged `provenance.json`.
-Only the two Gaussian configurations and their validation summaries are shipped.
+The two Gaussian and two HFS configurations have separate numerical exports and
+validation summaries. The HFS projection and selected atomic data are documented
+in [the HFS provenance guide](docs/hfs_calibration_provenance.md) and
+[atomic-data guide](docs/hfs_atomic_data.md).
 
 [CITATION.cff](CITATION.cff) identifies this software using the verified repository
 author. The reference temperature scale is described by
@@ -403,18 +485,19 @@ identifier remain TODO/VERIFY; neither is invented here.
 
 The [MIT software licence](LICENSE) is retained. See
 [DATA_NOTICE.md](DATA_NOTICE.md) for the limited numerical export and pending
-data-attribution/permission checks. No additional data licence or co-author
-permissions are assumed.
+calibration-data attribution/permission checks and separate CC BY 4.0 atomic-data
+attribution. No additional calibration-data licence or co-author permission is
+assumed.
 
 The original measured-area API and its approved frozen numerical products are
-preserved. New spectrum examples and tests generate analytical Gaussian arrays
-at run time, using invented parameters and fixed noise seeds. **No observational
-spectra, extracts, wavelength–flux arrays or observed spectral plots are included
-or used for development.** Committed spectral figures and the interface preview
-come from analytical examples only. FITS input, automatic continuum finding,
-higher-order continuum polynomials, HFS fitting, rectangular-band measurements,
-stellar spectral synthesis, calibration refitting and new observational
-validation are outside scope.
+preserved. New spectrum examples and tests generate analytical Gaussian profiles
+and HFS mixtures at run time, using invented parameters and fixed noise seeds.
+**No observational spectra, extracts, wavelength–flux arrays or observed spectral
+plots are included or used for development.** Committed spectral figures and the
+interface preview come from analytical examples only. FITS input, automatic continuum finding,
+higher-order continuum polynomials, interactive HFS review, rectangular-band
+measurements, stellar spectral synthesis, calibration refitting and new
+observational validation are outside scope.
 
 ## Development
 

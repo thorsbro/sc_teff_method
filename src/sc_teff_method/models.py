@@ -15,7 +15,7 @@ UNCERTAINTY_NOTE = (
 
 @dataclass(frozen=True)
 class LineCalibration:
-    """One frozen Gaussian calibration and its marginal empirical coverage.
+    """One frozen line calibration and its marginal empirical coverage.
 
     The strength range describes full-sample training measurements. Temperature
     and [Fe/H] ranges describe retained held-out references for this line.

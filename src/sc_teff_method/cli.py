@@ -111,6 +111,19 @@ def _parser() -> argparse.ArgumentParser:
     fit = commands.add_parser("fit", help="Fit a continuum-normalised air-Angstrom spectrum")
     _add_spectrum_arguments(fit)
     _add_output_arguments(fit)
+    hfs = commands.add_parser("fit-hfs", help="Fit fixed A+B HFS profiles and HFS temperatures")
+    _add_spectrum_arguments(hfs)
+    _add_output_arguments(hfs)
+    hfs.add_argument(
+        "--gaussian-anchor-areas", type=Path,
+        help="JSON of separately measured Gaussian areas for strict-domain applicability",
+    )
+    hfs.add_argument(
+        "--continuum-config", type=Path,
+        help="JSON mapping line IDs to PR 4 manual continuum controls",
+    )
+    hfs.add_argument("--continuum-warning-deviation", type=float, default=0.1)
+    hfs.add_argument("--no-continuum-extrapolation-warning", action="store_true")
     inspect = commands.add_parser(
         "inspect",
         help="Inspect and manually review fits in a local browser",
@@ -145,7 +158,7 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _fit_settings(args):
+def _fit_settings(args, *, options_class=None):
     from .fitting import FitOptions, GaussianParameters
 
     settings = {}
@@ -177,7 +190,8 @@ def _fit_settings(args):
     for value in args.exclude_region:
         line, numbers = _line_values(value, 2)
         regions.setdefault(line, []).append(numbers)
-    options = FitOptions(**settings.get("options", {}))
+    factory = FitOptions if options_class is None else options_class
+    options = factory(**settings.get("options", {}))
     return windows, initial, regions, options
 
 
@@ -237,6 +251,80 @@ def _run_fit(args) -> int:
             f"Exact-subset empirical validation: N={result.performance.n_stars}, "
             f"bias={result.performance.bias_k:.6f} K, RMSE={result.performance.rmse_k:.6f} K"
         )
+        print(result.temperature.uncertainty_note)
+    for warning in result.warnings:
+        print(f"Warning: {warning}")
+    for warning in result.calibration_warnings:
+        print(f"Warning [{warning.code}]: {warning.message}")
+    print(f"Outputs: {args.output_dir}")
+    return 0 if result.temperature is not None else 3
+
+
+def _run_hfs(args) -> int:
+    from .continuum import ContinuumCorrection, ContinuumOptions
+    from .hfs_fitting import HFSFitOptions
+    from .hfs_outputs import write_hfs_outputs
+    from .hfs_workflow import estimate_hfs_from_spectrum
+    from .review_io import load_spectrum_identity, protect_output_inputs
+
+    args.spectrum = args.spectrum.expanduser()
+    args.output_dir = args.output_dir.expanduser()
+    protected = [args.spectrum]
+    for name in ("fit_config", "gaussian_anchor_areas", "continuum_config"):
+        path = getattr(args, name)
+        if path is not None:
+            path = path.expanduser()
+            setattr(args, name, path)
+            protected.append(path)
+    protect_output_inputs(args.output_dir, protected, include_review=False)
+    if args.output_dir.exists() and not args.overwrite:
+        raise FileExistsError(
+            f"Output directory already exists: {args.output_dir}; use --overwrite"
+        )
+    windows, initial, regions, options = _fit_settings(args, options_class=HFSFitOptions)
+    anchors = (None if args.gaussian_anchor_areas is None else
+               json.loads(args.gaussian_anchor_areas.read_text(encoding="utf-8")))
+    corrections = {}
+    if args.continuum_config is not None:
+        controls = json.loads(args.continuum_config.read_text(encoding="utf-8"))
+        if not isinstance(controls, dict) or any(line not in LINE_IDS for line in controls):
+            raise ValueError("continuum-config must map line1 through line9 to manual controls")
+        for line, values in controls.items():
+            if not isinstance(values, dict):
+                raise ValueError("Each continuum-config entry must be an object")
+            corrections[line] = ContinuumCorrection(**values)
+    spectrum, identity = load_spectrum_identity(
+        args.spectrum, loader_settings=_loader_settings(args), rv_kms=args.rv_kms,
+        wavelength_unit=args.wavelength_unit, wavelength_frame=args.wavelength_frame,
+        continuum_normalised=args.continuum_normalised,
+    )
+    result = estimate_hfs_from_spectrum(
+        spectrum, configuration=args.configuration, feh=args.feh,
+        reference_temperature_k=args.reference_temperature_k,
+        windows=windows, initial_parameters=initial, excluded_regions=regions,
+        excluded_lines=args.exclude_line, options=options,
+        quality_policy="include_warned" if args.include_warned else "exclude_warned",
+        validation_scope=args.validation_scope, gaussian_anchor_areas=anchors,
+        continuum_corrections=corrections, continuum_options=ContinuumOptions(
+            max_deviation_warning=args.continuum_warning_deviation,
+            warn_extrapolation=not args.no_continuum_extrapolation_warning,
+        ),
+    )
+    write_hfs_outputs(
+        result, args.output_dir, overwrite=args.overwrite, plot_format=args.plot_format,
+        spectrum_label=args.label, input_metadata=identity, protected_paths=protected,
+    )
+    if result.temperature is None:
+        print("No combined HFS temperature: no usable lines remain; inspect saved diagnostics.")
+    else:
+        print(f"HFS Teff = {result.temperature.temperature_k:.6f} K "
+              f"from {result.temperature.n_lines} lines ({result.configuration})")
+        print("Reference procedure: unweighted HFS mixture; fixed laboratory A+B pattern.")
+        print(f"Frozen exact-subset {result.validation_scope} statistics: "
+              f"N={result.performance.n_stars}, bias={result.performance.bias_k:.6f} K, "
+              f"RMSE={result.performance.rmse_k:.6f} K")
+        print(f"Strict-domain Gaussian-anchor applicability: "
+              f"{result.strict_strength_domain_applicable}")
         print(result.temperature.uncertainty_note)
     for warning in result.warnings:
         print(f"Warning: {warning}")
@@ -408,7 +496,8 @@ def _run_replay(args) -> int:
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     try:
-        return {"fit": _run_fit, "inspect": _run_inspect, "replay": _run_replay}[args.command](args)
+        return {"fit": _run_fit, "fit-hfs": _run_hfs,
+                "inspect": _run_inspect, "replay": _run_replay}[args.command](args)
     except (ValueError, TypeError, OSError, ImportError) as exc:
         print(f"sc-teff: {exc}", file=sys.stderr)
         return 2

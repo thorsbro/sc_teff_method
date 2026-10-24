@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "sc-teff-method"
 version = "0.1.0"
-description = "Frozen K-band Sc I Gaussian-area temperature calibrations for cool giants"
+description = "Frozen K-band Sc I Gaussian and HFS temperature calibrations for cool giants"
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [{name = "Brian Thorsbro"}]
