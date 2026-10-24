@@ -1039,15 +1039,15 @@ class ReviewDocument:
         )
         if parameters is not None:
             status += (
-                f"<br/>Mixture amplitude A {_number(parameters.amplitude, 7)}; centre " 
-                if hfs else f"<br/>Depth {_number(parameters.amplitude, 7)}; centre "
-                f"{parameters.centre_air_angstrom:.7f} Å; sigma "
-                f"{_number(parameters.sigma_angstrom, 7)} Å."
+                (f"<br/>Mixture amplitude A {_number(parameters.amplitude, 7)}; centre "
+                 if hfs else f"<br/>Depth {_number(parameters.amplitude, 7)}; centre ")
+                + f"{parameters.centre_air_angstrom:.7f} Å; sigma "
+                + f"{_number(parameters.sigma_angstrom, 7)} Å."
             )
             errors = fit.parameter_errors
             if errors is not None:
                 status += (
-                    f"<br/>Formal parameter errors: depth {_number(errors.amplitude, 4)}, "
+                    f"<br/>Formal parameter errors: amplitude {_number(errors.amplitude, 4)}, "
                     f"centre {_number(errors.centre_air_angstrom, 4)} Å, "
                     f"sigma {_number(errors.sigma_angstrom, 4)} Å."
                 )
