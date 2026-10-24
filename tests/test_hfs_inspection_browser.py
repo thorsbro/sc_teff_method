@@ -89,7 +89,8 @@ def test_local_dual_method_review_browser_and_independent_approvals(tmp_path):
                 page.locator(".accept_line button:visible").click()
                 page.wait_for_function(
                     "() => [...document.querySelectorAll('.reviewed_summary')]"
-                    ".some(e => e.offsetParent !== null && e.textContent.includes('Accepted lines (1)'))",
+                    ".some(e => e.offsetParent !== null && "
+                    "e.textContent.includes('Accepted lines (1)'))",
                     timeout=30000,
                 )
                 page.locator(".save_review button:visible").click()
