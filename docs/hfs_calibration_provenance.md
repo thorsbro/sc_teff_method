@@ -124,9 +124,10 @@ individual-star measurements, predictions, object identities, catalogues or
 observed spectral plots are exported. Public tests run from the packaged
 products and fixed illustrative areas without access to the private repository.
 
-The MIT software licence is unchanged. These calibration products retain the
-existing numerical-data notice and pending attribution/permission checks in
-`DATA_NOTICE.md`; no additional data licence or co-author permission is asserted.
-Third-party atomic-data attribution is documented separately. Final paper
-bibliographic metadata and any additional numerical-data release rights remain
-TODO/VERIFY before a separate release or deposit.
+The software remains MIT-licensed. With co-author agreement, the released
+Gaussian and HFS empirical calibration products are licensed under CC BY 4.0,
+as described in [DATA_NOTICE.md](../DATA_NOTICE.md). Selected third-party
+atomic data retain their separately attributed CC BY 4.0 terms. The
+`v1.0.0` software release is archived on
+[Zenodo (DOI: 10.5281/zenodo.23621161)](https://doi.org/10.5281/zenodo.23621161).
+The accompanying scientific paper's journal citation remains pending.

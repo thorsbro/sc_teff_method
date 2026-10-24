@@ -1,5 +1,7 @@
 # sc_teff_method
 
+[![DOI](https://zenodo.org/badge/1430834131.svg)](https://doi.org/10.5281/zenodo.23621161)
+
 Calculate effective temperatures of cool giant stars from K-band Sc I Gaussian
 or hyperfine-structure (HFS) line areas, supplied directly or fitted to your
 continuum-normalised spectrum. Each measurement method has its own frozen
@@ -519,10 +521,11 @@ in [the HFS provenance guide](docs/hfs_calibration_provenance.md) and
 [CITATION.cff](CITATION.cff) identifies this software using the verified repository
 author. The reference temperature scale is described by
 [Nandakumar et al. (2023), A&A 675, A23](https://doi.org/10.1051/0004-6361/202346149).
-That reference describes the temperature scale, not a new DOI for this Sc I
-calibration. The scientific manuscript has no DOI yet; its citation can be added
-once the bibliographic metadata are finalised. A public data-release identifier
-can be added when available.
+That reference describes the temperature scale, not the Sc I
+calibration paper. The software and released calibration products are archived on
+[Zenodo (DOI: 10.5281/zenodo.23621161)](https://doi.org/10.5281/zenodo.23621161).
+The accompanying scientific manuscript does not yet have a journal DOI; its
+citation can be added once the bibliographic metadata are finalised.
 
 All co-authors have agreed to publication and licensing of the material
 released in this repository. The [MIT licence](LICENSE) covers the software,

@@ -1,13 +1,14 @@
 cff-version: 1.2.0
 type: software
 message: >-
-  Please cite this software when using it. The scientific-paper citation can be
-  added once the bibliographic metadata are finalised; the manuscript has no DOI yet.
+  Please cite this software using its Zenodo DOI. The accompanying scientific
+  paper's citation can be added once its bibliographic metadata are finalised.
 title: "sc_teff_method: K-band Sc I temperature calibration for cool giant stars"
 authors:
   - family-names: Thorsbro
     given-names: Brian
 version: 1.0.0
+doi: 10.5281/zenodo.23621161
 repository-code: "https://github.com/thorsbro/sc_teff_method"
 url: "https://github.com/thorsbro/sc_teff_method"
 license: MIT

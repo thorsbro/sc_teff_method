@@ -14,6 +14,8 @@ marginal empirical coverage and aggregate fixed-subset validation sample sizes,
 biases and RMSE values. Gaussian and HFS products have separate hash-checked
 package data and provenance. See [Gaussian provenance](docs/provenance.md) and
 [HFS calibration provenance](docs/hfs_calibration_provenance.md).
+The released software and calibration products are archived on
+[Zenodo (DOI: 10.5281/zenodo.23621161)](https://doi.org/10.5281/zenodo.23621161).
 
 These numerical calibration products were derived from the collaboration's
 scientific research and are publicly available in this repository. With the

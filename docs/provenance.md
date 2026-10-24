@@ -148,14 +148,16 @@ all 4,088 validation lookups. It has no reference-repository path or dependency.
 
 ## Citation and remaining verification
 
-The software author's name in `CITATION.cff` is verified by the existing MIT
-copyright notice and repository-owner metadata. The software is version 1.0.0; no archival release date or DOI is claimed. The reference temperature scale
-is [Nandakumar et al. (2023), A&A 675, A23](https://doi.org/10.1051/0004-6361/202346149),
+The software author is identified in [CITATION.cff](../CITATION.cff).
+Version 1.0.0 was released on 24 October 2026 and is archived on
+[Zenodo (DOI: 10.5281/zenodo.23621161)](https://doi.org/10.5281/zenodo.23621161).
+The reference temperature scale is
+[Nandakumar et al. (2023), A&A 675, A23](https://doi.org/10.1051/0004-6361/202346149),
 whose article metadata was verified against the publisher. That article is
 not presented as the new Sc I calibration paper.
 
-TODO/VERIFY for the accompanying scientific paper: insert its final
-bibliographic metadata and archival DOI when available. The software remains
+The accompanying scientific paper's final bibliographic metadata and journal
+DOI can be added when available. The software remains
 MIT-licensed, and the released empirical calibration products and selected
 third-party HFS atomic data retain the distinct CC BY 4.0 terms described in
 [DATA_NOTICE.md](../DATA_NOTICE.md).
