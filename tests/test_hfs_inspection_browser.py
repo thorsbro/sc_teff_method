@@ -85,7 +85,9 @@ def test_local_dual_method_review_browser_and_independent_approvals(tmp_path):
             try:
                 page.goto(url, wait_until="networkidle", timeout=45000)
                 page.locator(".profile_method select").select_option("HFS")
-                playwright.expect(page.get_by_text("Sc I HFS line-fitting review")).to_be_visible(timeout=15000)
+                playwright.expect(
+                    page.get_by_text("Sc I HFS line-fitting review")
+                ).to_be_visible(timeout=15000)
                 page.locator(".accept_line button:visible").click()
                 page.wait_for_function(
                     "() => [...document.querySelectorAll('.reviewed_summary')]"
@@ -101,7 +103,9 @@ def test_local_dual_method_review_browser_and_independent_approvals(tmp_path):
                 assert payload["lines"]["line1"]["decision"]["state"] == "accepted"
 
                 page.locator(".profile_method select").select_option("Gaussian")
-                playwright.expect(page.get_by_text("Sc I Gaussian line-fitting review")).to_be_visible(timeout=15000)
+                playwright.expect(
+                    page.get_by_text("Sc I Gaussian line-fitting review")
+                ).to_be_visible(timeout=15000)
                 page.locator(".accept_line button:visible").click()
                 page.locator(".save_review button:visible").click()
                 page.wait_for_timeout(300)
