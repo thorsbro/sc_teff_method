@@ -63,7 +63,7 @@ def test_local_dual_method_review_browser_and_independent_approvals(tmp_path):
                 msg = messages.get(timeout=0.2)
             except queue.Empty:
                 continue
-            match = re.search(r"http://127\\.0\\.0\\.1:\\d+/", msg)
+            match = re.search(r"http://127\.0\.0\.1:\d+/", msg)
             if match:
                 url = match.group()
                 break
