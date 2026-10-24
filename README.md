@@ -100,8 +100,10 @@ remains the unweighted mean of included individual HFS temperatures.
 The Hala & Nave Table 4 positions behave approximately as A-only calculations
 for these nine transitions; production uses A+B positions. The positive-A
 assignment for line9 and explicit missing-B assumptions remain frozen. Selected
-third-party atomic data are attributed under CC BY 4.0, separately from the MIT
-software and pending calibration-data permissions. See the
+third-party atomic data retain their original CC BY 4.0 attribution. With the
+co-authors' agreement, the released empirical calibration products are also
+licensed under CC BY 4.0, while the software remains MIT-licensed. See
+[DATA_NOTICE.md](DATA_NOTICE.md) and the
 [HFS fitting guide](docs/hfs_fitting.md),
 [atomic definitions](docs/hfs_atomic_data.md),
 [HFS calibration provenance](docs/hfs_calibration_provenance.md) and
@@ -520,11 +522,17 @@ calibration. The scientific manuscript has no DOI yet; its citation can be added
 once the bibliographic metadata are finalised. A public data-release identifier
 can be added when available.
 
-The [MIT software licence](LICENSE) is retained. See
-[DATA_NOTICE.md](DATA_NOTICE.md) for the limited numerical export and pending
-calibration-data attribution/permission checks and separate CC BY 4.0 atomic-data
-attribution. No additional calibration-data licence or co-author permission is
-assumed.
+All co-authors have agreed to publication and licensing of the material
+released in this repository. The [MIT licence](LICENSE) covers the software,
+including analytical example generators and tests. The Gaussian and HFS
+calibration coefficients, empirical coverage summaries, aggregate validation
+statistics and associated numerical-data provenance are available under
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Selected third-party
+HFS atomic information retains its independently granted CC BY 4.0 licence and
+attribution to Hala & Nave (2022). See [DATA_NOTICE.md](DATA_NOTICE.md) for
+the applicable terms and attribution requirements. Underlying observational
+spectra and other third-party observational data are not distributed or licensed
+by this repository.
 
 The measured-area API uses the frozen numerical products described above.
 Spectrum examples and tests generate analytical Gaussian profiles
