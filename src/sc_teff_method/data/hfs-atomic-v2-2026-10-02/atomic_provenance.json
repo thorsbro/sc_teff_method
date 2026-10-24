@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "atomic_id": "hfs-atomic-v2-2026-10-02",
+  "dataset_id": "hala2022_ab_generated",
+  "source_repository": "thorsbro/scteff_paper",
+  "source_policy": "hfs-atomic-v2-2026-10-02",
+  "source_files": {
+    "config/hfs_atomic_policy.json": {
+      "sha256": "4363f993846c216643f0c8ef21b50ebf2a750a8366f24e8d86b019513deab32b",
+      "git_blob_sha1": "336ce0b36ed8501a8baeea4d9d86c878728f4126"
+    },
+    "config/hfs_lines.csv": {
+      "sha256": "c6b41349d301ddb4b30aa9bc12225295fadbb660246481763055dd0d0c83ac2a",
+      "git_blob_sha1": "048e6a1d2f88d88c7cd2f2f53815b28b8ea8ddd6"
+    },
+    "config/hfs_levels.csv": {
+      "sha256": "f59573c36035854f657ef4570fd92cdbd7f9a33b24f5c27aa81cea186b70b63c",
+      "git_blob_sha1": "225bfe591db14c7796e59c850859459b97174ede"
+    },
+    "config/hfs_components_hala2022_ab.csv": {
+      "sha256": "698f06a79ce73f6df6acdf669fa7d43b193089296ec177540ff5a4361374b626",
+      "git_blob_sha1": "2815e5305f7645f38375b0da3cda4ab83163a7e2"
+    },
+    "config/hfs_components_hala2022_table4.csv": {
+      "sha256": "6f401031673fe9543ad16daa47d0bccc7d566bc802f8970f64cde85fadc0a78a",
+      "git_blob_sha1": "2b7465433a914433c7570c64ff5b8a21039e4fe2"
+    },
+    "config/hfs_component_validation.csv": {
+      "sha256": "d52ade6a3ac316d1ced0e8e49b0e30e2f7caa6d9a941b347392a7c1fdf9084af",
+      "git_blob_sha1": "4cfe3951cd699446712f9b11b770424c211dca85"
+    },
+    "src/scteff/hfs.py": {
+      "sha256": "245ca2da19e0d0cbc524e762a5722b56b8e223be972069643b55635a075d16e8",
+      "git_blob_sha1": "e6d7459d01e8c9b938fe8ba808a99ef6e3f69155"
+    },
+    "src/scteff/hfs_data.py": {
+      "sha256": "054fc33c0c6033a8a609f9dae5019e31371398fc9fe09c44c14945d453b6c6b9",
+      "git_blob_sha1": "c9a6be563c6147388be289c41f287c002a5f5aa8"
+    },
+    "src/scteff/hfs_fitting.py": {
+      "sha256": "be925e2641959ad246550b1c6f80af3f69bc8c012f2c85a8b2ed6a08b5b4b2a4",
+      "git_blob_sha1": "c161244dcac8cf8d92246e6cd0df727a6d263b35"
+    },
+    "tests/test_hfs.py": {
+      "sha256": "ef04ce848ed9e6e9260077a6f7be511c7068ba344187c74a0e777ed7b22724e0",
+      "git_blob_sha1": "e63f2fd8abb82915f6e2b3161bff70b00f03f133"
+    },
+    "tests/test_hfs_data.py": {
+      "sha256": "b51da5bcc977b82a4a45995f97924e0dfe4489e4bf5d5bcf94dc14699199fcf6",
+      "git_blob_sha1": "babbf832b18d23a3d0949eb2911fdb2a2dc1138e"
+    },
+    "docs/hfs_atomic_data.md": {
+      "sha256": "363254eb5bd2b91b1d416708e9420258e0d9b21b0abfd93635a342bab9212bca",
+      "git_blob_sha1": "89ec28924ae8cf0cfd29751fc11fa83df326c7cd"
+    },
+    "docs/hfs_usage.md": {
+      "sha256": "54ccb388062e4facd563d39cc626c7bf9e6c8a5c4330027095689bc6b12c014a",
+      "git_blob_sha1": "8993deaa93aaf0c47a0c64f7c3a0c87c85195a79"
+    }
+  },
+  "publisher_table4_sha256": "54a82bd6dfcdfed9b850a4a4ab60a3e1b8976a7b870266142db4dc3971c0dcb1",
+  "primary_citation": "Hala & Nave (2022), ApJS 259, 17",
+  "primary_doi": "10.3847/1538-4365/ac3edc",
+  "atomic_data_attribution": "Hala & Nave (2022), CC BY 4.0. The nine-transition selection combines their recommended A/B constants and published rounded component strengths. Lower-level recommendations cite Ertmer & Hofer (1976) and Zeiske et al. (1976).",
+  "modifications": "Only ten primary levels and nine canonical parent/atomic-cog mappings are exported. Components retain all 133 published F assignments, frozen A+B positions and strengths; selected Table 4 positions/raw strengths are kept only to test the A-only distinction and rounding. Approximate wavelength columns, legacy/sensitivity models and the complete publisher table are omitted.",
+  "derived_sha256": {
+    "atomic.json": "920ec80f5e8a67e96e78a9da439b93b50ae66d8712208e0f2c25575742081ccc"
+  }
+}

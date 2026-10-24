@@ -65,6 +65,10 @@ def estimate_temperature(
     proxy. Metallicity and temperature coverage are marginal, not joint support.
     """
     calibration = get_calibration(configuration)
+    if getattr(areas, "measurement_source", "gaussian") != "gaussian":
+        raise ValueError(
+            "Gaussian calibration requires Gaussian areas; use estimate_hfs_temperature"
+        )
     if not isinstance(areas, Mapping):
         raise TypeError("areas must be a mapping from line IDs to Gaussian areas in Angstrom")
     chosen = _canonical_lines(areas)

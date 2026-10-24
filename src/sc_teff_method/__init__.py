@@ -1,9 +1,15 @@
-"""Effective temperatures from frozen Sc I Gaussian line-area calibrations."""
+"""Effective temperatures from separate frozen Sc I Gaussian and HFS calibrations."""
 
 from importlib import import_module
 
 from ._data import CALIBRATION_ID, COHORTS, CONFIGURATIONS, LINE_IDS, SCOPES, get_calibration
 from .api import estimate_temperature, subset_performance
+from .hfs_calibration import (
+    estimate_hfs_temperature,
+    get_hfs_calibration,
+    hfs_subset_performance,
+)
+from .measurements import LineAreas
 from .models import (
     ApplicabilityWarning,
     Calibration,
@@ -26,6 +32,13 @@ _SPECTRAL_EXPORTS = {
     "write_review_outputs": "review_exports",
     "ContinuumCorrection": "continuum", "ContinuumOptions": "continuum",
     "evaluate_continuum": "continuum", "apply_continuum": "continuum",
+    "HFSLevel": "hfs", "HFSComponent": "hfs", "hfs_absorption": "hfs", "hfs_area": "hfs",
+    "load_hfs_atomic_data": "hfs_data",
+    "HFSParameters": "hfs_fitting", "HFSFitOptions": "hfs_fitting",
+    "HFSLineFit": "hfs_fitting", "fit_hfs_lines": "hfs_fitting",
+    "HFSSpectralEstimate": "hfs_workflow", "estimate_hfs_from_spectrum": "hfs_workflow",
+    "fit_hfs_spectrum": "hfs_workflow", "plot_hfs_diagnostics": "hfs_outputs",
+    "write_hfs_outputs": "hfs_outputs",
 }
 
 
@@ -58,6 +71,10 @@ __all__ = [
     "estimate_temperature",
     "get_calibration",
     "subset_performance",
+    "LineAreas",
+    "get_hfs_calibration",
+    "estimate_hfs_temperature",
+    "hfs_subset_performance",
 ]
 
 # Preserve dependency-free wildcard imports from PR 1. Spectral APIs are

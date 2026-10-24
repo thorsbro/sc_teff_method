@@ -33,6 +33,10 @@ def _plain(value):
 
 def summary_dict(result: SpectralEstimate, *, input_metadata: dict | None = None) -> dict:
     """Create a numerical summary without embedding input wavelength/flux arrays."""
+    if not isinstance(result, SpectralEstimate):
+        raise TypeError(
+            "Gaussian outputs require a SpectralEstimate; use write_hfs_outputs for HFS"
+        )
     calibration = get_calibration(result.configuration)
     spectrum = result.spectrum
     summary = {

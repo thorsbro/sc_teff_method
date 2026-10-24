@@ -1,0 +1,259 @@
+{
+  "schema_version": 1,
+  "origin": "Newly generated analytical HFS mixtures and independent seeded noise; no observational inputs.",
+  "reference_source": {
+    "repository": "thorsbro/scteff_paper",
+    "path": "src/scteff/hfs.py",
+    "git_blob_sha1": "e6d7459d01e8c9b938fe8ba808a99ef6e3f69155",
+    "sha256": "245ca2da19e0d0cbc524e762a5722b56b8e223be972069643b55635a075d16e8"
+  },
+  "atomic_dataset_id": "hala2022_ab_generated",
+  "sampling": {
+    "start_offset_angstrom": -4,
+    "stop_offset_angstrom": 4,
+    "n_pixels": 321,
+    "window_half_width_angstrom": 3
+  },
+  "options": {
+    "weighting": "unweighted",
+    "minimum_samples": 10,
+    "max_evaluations": 5000,
+    "boundary_fraction": 0.001,
+    "residual_rms_warning": 0.03
+  },
+  "maximum_public_private_differences": {
+    "profile": 0.0,
+    "amplitude": 0.0,
+    "centre_angstrom": 0.0,
+    "sigma_angstrom": 0.0,
+    "area_angstrom": 0.0,
+    "area_error_angstrom": 0.0
+  },
+  "cases": [
+    {
+      "line_id": "line1",
+      "truth": {
+        "amplitude": 0.36,
+        "centre_offset_angstrom": 0.03241813835120411,
+        "sigma_angstrom": 0.26
+      },
+      "noise_seed": 634000,
+      "noise_sigma": 0.0014,
+      "initial": {
+        "amplitude": 0.43,
+        "centre_offset_angstrom": 0.02500000000145519,
+        "sigma_angstrom": 0.37
+      },
+      "expected": {
+        "amplitude": 0.3563618303922069,
+        "centre_air_angstrom": 21730.49752204169,
+        "sigma_angstrom": 0.2626118114593492,
+        "area_angstrom": 0.23458237046245833,
+        "area_error_angstrom": 0.00033570473224048606,
+        "residual_rms": 0.0014129005930807622,
+        "n_pixels": 241,
+        "flags": []
+      }
+    },
+    {
+      "line_id": "line2",
+      "truth": {
+        "amplitude": 0.379,
+        "centre_offset_angstrom": -0.02496881019396824,
+        "sigma_angstrom": 0.28300000000000003
+      },
+      "noise_seed": 634001,
+      "noise_sigma": 0.0014,
+      "initial": {
+        "amplitude": 0.43,
+        "centre_offset_angstrom": 0.02500000000145519,
+        "sigma_angstrom": 0.37
+      },
+      "expected": {
+        "amplitude": 0.3790476783522813,
+        "centre_air_angstrom": 21812.143652066392,
+        "sigma_angstrom": 0.28205220652164964,
+        "area_angstrom": 0.26798672216088715,
+        "area_error_angstrom": 0.0003338379356669396,
+        "residual_rms": 0.0015299859911015886,
+        "n_pixels": 241,
+        "flags": []
+      }
+    },
+    {
+      "line_id": "line3",
+      "truth": {
+        "amplitude": 0.39799999999999996,
+        "centre_offset_angstrom": -0.0593995497947617,
+        "sigma_angstrom": 0.306
+      },
+      "noise_seed": 634002,
+      "noise_sigma": 0.0014,
+      "initial": {
+        "amplitude": 0.43,
+        "centre_offset_angstrom": 0.02500000000145519,
+        "sigma_angstrom": 0.37
+      },
+      "expected": {
+        "amplitude": 0.39845744503421576,
+        "centre_air_angstrom": 21842.72237612374,
+        "sigma_angstrom": 0.3057377004102688,
+        "area_angstrom": 0.3053661367592531,
+        "area_error_angstrom": 0.0002919887424047302,
+        "residual_rms": 0.0013053624357392897,
+        "n_pixels": 241,
+        "flags": []
+      }
+    },
+    {
+      "line_id": "line4",
+      "truth": {
+        "amplitude": 0.417,
+        "centre_offset_angstrom": -0.03921861725029885,
+        "sigma_angstrom": 0.329
+      },
+      "noise_seed": 634003,
+      "noise_sigma": 0.0014,
+      "initial": {
+        "amplitude": 0.43,
+        "centre_offset_angstrom": 0.02500000000145519,
+        "sigma_angstrom": 0.37
+      },
+      "expected": {
+        "amplitude": 0.4158905245478875,
+        "centre_air_angstrom": 22024.12843427319,
+        "sigma_angstrom": 0.329957606158274,
+        "area_angstrom": 0.34397517797724264,
+        "area_error_angstrom": 0.00037518617685091603,
+        "residual_rms": 0.001421753745509671,
+        "n_pixels": 241,
+        "flags": []
+      }
+    },
+    {
+      "line_id": "line5",
+      "truth": {
+        "amplitude": 0.436,
+        "centre_offset_angstrom": 0.01701973112722044,
+        "sigma_angstrom": 0.26
+      },
+      "noise_seed": 634004,
+      "noise_sigma": 0.0014,
+      "initial": {
+        "amplitude": 0.43,
+        "centre_offset_angstrom": 0.02500000000145519,
+        "sigma_angstrom": 0.37
+      },
+      "expected": {
+        "amplitude": 0.4353153132066731,
+        "centre_air_angstrom": 22052.00216637559,
+        "sigma_angstrom": 0.2604827608607481,
+        "area_angstrom": 0.28423193078190534,
+        "area_error_angstrom": 0.0002958136868629467,
+        "residual_rms": 0.0014073879372382633,
+        "n_pixels": 241,
+        "flags": []
+      }
+    },
+    {
+      "line_id": "line6",
+      "truth": {
+        "amplitude": 0.45499999999999996,
+        "centre_offset_angstrom": 0.05761021719808923,
+        "sigma_angstrom": 0.28300000000000003
+      },
+      "noise_seed": 634005,
+      "noise_sigma": 0.0014,
+      "initial": {
+        "amplitude": 0.43,
+        "centre_offset_angstrom": 0.02500000000145519,
+        "sigma_angstrom": 0.37
+      },
+      "expected": {
+        "amplitude": 0.45531975274368675,
+        "centre_air_angstrom": 22065.359456783783,
+        "sigma_angstrom": 0.2828820434318101,
+        "area_angstrom": 0.3228581887620304,
+        "area_error_angstrom": 0.0002694896234867309,
+        "residual_rms": 0.0013374616831738914,
+        "n_pixels": 241,
+        "flags": []
+      }
+    },
+    {
+      "line_id": "line7",
+      "truth": {
+        "amplitude": 0.474,
+        "centre_offset_angstrom": 0.04523413526112563,
+        "sigma_angstrom": 0.306
+      },
+      "noise_seed": 634006,
+      "noise_sigma": 0.0014,
+      "initial": {
+        "amplitude": 0.43,
+        "centre_offset_angstrom": 0.02500000000145519,
+        "sigma_angstrom": 0.37
+      },
+      "expected": {
+        "amplitude": 0.47438128870960716,
+        "centre_air_angstrom": 22266.764392427332,
+        "sigma_angstrom": 0.3060858034742373,
+        "area_angstrom": 0.36396587937913333,
+        "area_error_angstrom": 0.00027767303094432147,
+        "residual_rms": 0.0013254986014400471,
+        "n_pixels": 241,
+        "flags": []
+      }
+    },
+    {
+      "line_id": "line8",
+      "truth": {
+        "amplitude": 0.493,
+        "centre_offset_angstrom": -0.008730002027732553,
+        "sigma_angstrom": 0.329
+      },
+      "noise_seed": 634007,
+      "noise_sigma": 0.0014,
+      "initial": {
+        "amplitude": 0.43,
+        "centre_offset_angstrom": 0.02500000000145519,
+        "sigma_angstrom": 0.37
+      },
+      "expected": {
+        "amplitude": 0.4928403891922362,
+        "centre_air_angstrom": 22394.69374205768,
+        "sigma_angstrom": 0.32948420187393357,
+        "area_angstrom": 0.40703412564054614,
+        "area_error_angstrom": 0.0003407145567331215,
+        "residual_rms": 0.0015700448310701023,
+        "n_pixels": 241,
+        "flags": []
+      }
+    },
+    {
+      "line_id": "line9",
+      "truth": {
+        "amplitude": 0.512,
+        "centre_offset_angstrom": -0.05466781571158208,
+        "sigma_angstrom": 0.26
+      },
+      "noise_seed": 634008,
+      "noise_sigma": 0.0014,
+      "initial": {
+        "amplitude": 0.43,
+        "centre_offset_angstrom": 0.02500000000145519,
+        "sigma_angstrom": 0.37
+      },
+      "expected": {
+        "amplitude": 0.513373607524463,
+        "centre_air_angstrom": 22656.72073743964,
+        "sigma_angstrom": 0.25951381384391253,
+        "area_angstrom": 0.33395192578089766,
+        "area_error_angstrom": 0.0003415683601694418,
+        "residual_rms": 0.0013984504487621417,
+        "n_pixels": 241,
+        "flags": []
+      }
+    }
+  ]
+}

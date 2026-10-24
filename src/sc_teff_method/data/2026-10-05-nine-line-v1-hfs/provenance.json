@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "calibration_id": "2026-10-05-nine-line-v1",
+  "measurement_source": "hfs",
+  "source_repository": "https://github.com/thorsbro/scteff_paper",
+  "snapshot_git_revision": "1b748b220ec03aa9b6417ad3737f7542436672de",
+  "source_sha256": {
+    "results/publication/2026-10-05-nine-line-v1/coefficients_all_methods.csv": "bfc0b011807f171e1bf8d14a47b559afd306d8ae27c205909f392e6c3cda330a",
+    "results/publication/2026-10-05-nine-line-v1/subset_metrics.csv": "a340e1e79d92a0b0244a2162a3f683cef10726e25612efca52c5563e02cbfe30",
+    "results/publication/2026-10-05-nine-line-v1/line_quality.csv": "21adaf4158078f815a1414b62e15d1a93051f0b033d25fa2373e360943b3ca83",
+    "results/publication/2026-10-05-nine-line-v1/metadata.json": "51079148198763a987aae07bceb562ec1725eaceb4c53969da64970bbc66b508"
+  },
+  "upstream_generator_code_sha256": {
+    "scripts/make_line_quality.py": "a3d4714c4ec92301fb5d9365ee83aed143a0535ae9837ee9edc7a41c5fb9cb52",
+    "src/scteff/line_quality.py": "0ddc1863e05c43defd24f10583184696b005a658354a9cef2e3106dd94f75d81",
+    "src/scteff/nine_line_paper.py": "77f4e153f16564b43ff3405ed384b832c130a14b94d3ce2084351760aea0e7e8",
+    "src/scteff/publication_calibration.py": "e97ed52d28eb034976dcbc28ed21f34ba4f64c3139b1b55f600dda8e2848d60d",
+    "src/scteff/publication_tables.py": "fe91fb0569997cb5dc24afe8b4d571027c5c7e178d32ef3df917393968de8883"
+  },
+  "upstream_software": {
+    "numpy": "2.5.3",
+    "python": "3.12.14"
+  },
+  "export": {
+    "models": {
+      "nandakumar_feh": "legacy_direct_metallicity_0p08",
+      "nandakumar_no_feh": "legacy_direct_1d_0p08"
+    },
+    "coefficient_rows": 18,
+    "validation_rows": 4088,
+    "subset_encoding": "bit i-1 denotes linei; non-empty masks 1 through 511",
+    "coefficient_conversion": "Original decimal strings to binary64; no refitting/rounding",
+    "validation_conversion": "Original N, bias and RMSE strings retained verbatim",
+    "selection_anchor": "Gaussian W >= 0.08 Angstrom, inclusive, no upper cut",
+    "selection_definition_source": "Existing public frozen Gaussian provenance",
+    "measurement_identity": "Frozen model_id strings are shared across methods; measurement_source=hfs is an essential part of the calibration and validation identity.",
+    "excluded": "Spectra, per-star products, catalogues, object lists, code and Git history"
+  },
+  "derived_sha256": {
+    "calibration.json": "b62db1c8b3700cbd082664eda4e98c65a6f76fd3ea6113ef34d14395eb184ed3",
+    "subset_metrics.csv": "a9e43b571d78365be83f96702212c1b688ff5207398f1d98fff8d4f887a9c906"
+  },
+  "data_rights": "No additional calibration-data licence or co-author permissions asserted; see DATA_NOTICE.md. Atomic data attribution is separate."
+}
